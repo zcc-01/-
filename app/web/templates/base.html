@@ -28,7 +28,7 @@
   <link rel="stylesheet" href="/static/style.css" />
   {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 <header class="topbar">
   <div class="wrap">
     <div class="topbar-main">

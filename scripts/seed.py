@@ -12,8 +12,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.catalog.seed import ensure_catalog  # noqa: E402
 from app.core.config import settings  # noqa: E402
-from app.db.base import Base, engine, init_db  # noqa: E402
+from app.db.base import Base, SessionLocal, engine, init_db  # noqa: E402
 from app.db.seed import DEMO_PASSWORD, seed_if_empty  # noqa: E402
 
 
@@ -26,12 +27,28 @@ def main() -> None:
 
     init_db()
     created = seed_if_empty()
+    session = SessionLocal()
+    try:
+        stats = ensure_catalog(session)
+    finally:
+        session.close()
+
     if created:
         print(f"种子数据写入完成，演示口令：{DEMO_PASSWORD}")
         print("  farmer01 / operator01 / regulator01 / consumer01")
         print("  演示溯源码：PC-20251101-DEMO-ITM0001")
     else:
-        print("库中已有数据，跳过种子写入（需要重建请加 --reset）")
+        print("库中已有数据，跳过基础种子（需要重建请加 --reset）")
+
+    if any(stats.values()):
+        print(
+            (
+                "品类数据补齐：分类 +{categories}、商品 +{products}、"
+                "产地 +{farms}、批次 +{batches}"
+            ).format(**stats)
+        )
+    else:
+        print("品类与商品数据已是最新，无需补齐")
 
 
 if __name__ == "__main__":

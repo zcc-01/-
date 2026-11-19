@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="沙瓤番茄">
+  <title>沙瓤番茄</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#ffedeb"/>
+      <stop offset="1" stop-color="#f8c2ba"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#a92419" opacity=".14"/>
+  <g transform="translate(300 250)"><circle cx="0" cy="8" r="100" fill="#d8352a"/>
+<path d="M-100 8 a100 100 0 0 0 200 0" fill="#a92419" opacity=".16"/>
+<circle cx="-36" cy="-24" r="26" fill="#ffffff" opacity=".22"/>
+<path d="M0 -16 L-4 -46 L-14 -18 Z" fill="#4f8f45"/><path d="M0 -16 L-26 -46 L-8 -18 Z" fill="#4f8f45"/><path d="M0 -16 L-28 -46 L12 -18 Z" fill="#4f8f45"/><path d="M0 -16 L-8 -46 L22 -18 Z" fill="#4f8f45"/><path d="M0 -16 L14 -46 L20 -18 Z" fill="#4f8f45"/><path d="M0 -16 L26 -46 L4 -18 Z" fill="#4f8f45"/><path d="M0 -16 L22 -46 L-16 -18 Z" fill="#4f8f45"/>
+<path d="M0 -18 q-4 -26 12 -34" stroke="#4f8f45" stroke-width="8" stroke-linecap="round" fill="none"/></g>
+</svg>

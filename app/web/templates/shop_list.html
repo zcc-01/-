@@ -2,66 +2,94 @@
 
 {% block title %}商品信息 · {{ app_name }}{% endblock %}
 {% block subtitle %}商品信息{% endblock %}
+{% block body_class %}wide{% endblock %}
 
 {% block content %}
   {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
   {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 
   <section class="card">
-    <div class="section-head"><h2>商品信息</h2></div>
+    <div class="section-head">
+      <h2>商品信息{% if current_name %} · {{ current_name }}{% endif %}</h2>
+      <span class="muted" style="margin-left:auto;font-size:13px;">共 {{ total }} 件商品</span>
+    </div>
 
-    <form class="form-inline" method="get" action="/shop" style="margin-top:8px;">
-      <div class="form-row" style="flex:1;min-width:240px;">
-        <label for="keyword">商品名称</label>
-        <input id="keyword" name="keyword" value="{{ query.keyword or '' }}" placeholder="输入名称或描述关键词" />
+    <form class="filter-bar" method="get" action="/shop">
+      <div class="filter-field" style="flex:1 1 220px;">
+        <label for="keyword">关键词</label>
+        <input id="keyword" name="keyword" value="{{ query.keyword or '' }}" placeholder="名称 / 标签 / 产地" />
       </div>
-      <button class="btn" type="submit">搜索</button>
-      <a class="btn btn-ghost" href="/shop">重置</a>
+      <div class="filter-field">
+        <label for="origin">产地</label>
+        <input id="origin" name="origin" value="{{ query.origin or '' }}" placeholder="如 赣州 / 山东" style="width:120px;" />
+      </div>
+      <div class="filter-field">
+        <label for="price_min">价格（元）</label>
+        <div class="price-range">
+          <input id="price_min" name="price_min" value="{{ query.price_min or '' }}" placeholder="最低" />
+          <span>—</span>
+          <input id="price_max" name="price_max" value="{{ query.price_max or '' }}" placeholder="最高" />
+        </div>
+      </div>
       <input type="hidden" name="category" value="{{ query.category or '' }}" />
-      <input type="hidden" name="sort" value="{{ query.sort or 'new' }}" />
+      <input type="hidden" name="sort" value="{{ sort }}" />
       {% if query.certified_only %}<input type="hidden" name="certified_only" value="1" />{% endif %}
+      {% if query.in_stock %}<input type="hidden" name="in_stock" value="1" />{% endif %}
+      <div class="filter-actions">
+        <button class="btn btn-sm" type="submit">筛选</button>
+        <a class="btn btn-sm btn-ghost" href="{{ reset_href }}">重置</a>
+      </div>
     </form>
 
-    <div class="tabs">
-      <a class="{% if not query.category %}active{% endif %}" href="/shop?keyword={{ query.keyword or '' }}">全部</a>
-      {% for c in categories %}
-      <a class="{% if query.category == c %}active{% endif %}"
-         href="/shop?category={{ c|urlencode }}&keyword={{ (query.keyword or '')|urlencode }}">{{ c }}</a>
+    <div class="tabs cat-tabs">
+      {% for t in tabs %}
+      <a class="{% if t.active %}active{% endif %}" href="{{ t.href }}">
+        {% if t.icon %}<span class="cat-icon">{{ t.icon }}</span>{% endif %}{{ t.name }}
+        <span class="cat-count">{{ t.count }}</span>
+      </a>
       {% endfor %}
     </div>
 
+    {% if chips %}
+    <div class="chips-row">
+      {% for c in chips %}
+      <a class="chip-link {% if c.active %}active{% endif %}" href="{{ c.href }}">{{ c.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="sortbar">
-      <a class="{% if query.sort == 'new' %}active{% endif %}"
-         href="/shop?{{ {'keyword': query.keyword or '', 'category': query.category or '', 'sort': 'new', 'certified_only': query.certified_only and 1 or ''}|urlencode }}">最新上架</a>
-      <a class="{% if query.sort == 'price_asc' %}active{% endif %}"
-         href="/shop?{{ {'keyword': query.keyword or '', 'category': query.category or '', 'sort': 'price_asc', 'certified_only': query.certified_only and 1 or ''}|urlencode }}">价格 ↑</a>
-      <a class="{% if query.sort == 'price_desc' %}active{% endif %}"
-         href="/shop?{{ {'keyword': query.keyword or '', 'category': query.category or '', 'sort': 'price_desc', 'certified_only': query.certified_only and 1 or ''}|urlencode }}">价格 ↓</a>
-      <a class="{% if query.sort == 'sales' %}active{% endif %}"
-         href="/shop?{{ {'keyword': query.keyword or '', 'category': query.category or '', 'sort': 'sales', 'certified_only': query.certified_only and 1 or ''}|urlencode }}">销量优先</a>
-      <span style="margin-left:auto;">
-        <a class="{% if query.certified_only %}active{% endif %}"
-           href="/shop?{{ {'keyword': query.keyword or '', 'category': query.category or '', 'sort': query.sort or 'new', 'certified_only': '' if query.certified_only else 1}|urlencode }}">只看已认证产地</a>
+      {% for s in sorts %}
+      <a class="{% if sort == s.key %}active{% endif %}" href="{{ s.href }}">{{ s.label }}</a>
+      {% endfor %}
+      <span style="margin-left:auto;display:flex;gap:16px;">
+        <a class="{% if query.certified_only %}active{% endif %}" href="{{ cert_href }}">只看已认证产地</a>
+        <a class="{% if query.in_stock %}active{% endif %}" href="{{ stock_href }}">只看有货</a>
       </span>
-      <span class="muted">共 {{ total }} 件</span>
     </div>
 
     {% if items %}
     <div class="grid">
       {% for p in items %}
       <div class="product-card">
-        <a href="/shop/{{ p.product_id }}" style="text-decoration:none;">
-          <div class="thumb {{ 'tea' if '茶' in p.name else ('nut' if '核桃' in p.name else 'fruit') }}">{{ p.category[:1] }}</div>
+        <a class="cover-link" href="/shop/{{ p.product_id }}">
+          {% if p.image_url %}
+          <img class="cover" src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy" />
+          {% else %}
+          <div class="thumb">{{ p.category[:1] }}</div>
+          {% endif %}
         </a>
         <h3><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></h3>
-        <div class="muted" style="font-size:13px;">
-          {{ p.category }}
+        <div class="meta-line">
+          <span class="tag">{{ p.category }}</span>
           {% if p.certified %}<span class="tag ok">产地已认证</span>{% endif %}
-          {% if p.status != 'on_sale' %}<span class="tag">已下架</span>{% endif %}
+          {% if p.status != 'on_sale' %}<span class="tag bad">已下架</span>{% endif %}
         </div>
         <div class="price">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
-        <div class="muted" style="font-size:13px;">库存 {{ p.stock }} · 已售 {{ p.sales_count }}</div>
-        <div style="margin-top:auto;display:flex;gap:8px;">
+        <div class="muted card-line" style="font-size:13px;">
+          {{ p.spec or p.origin or '产地直供' }} · 库存 {{ p.stock }} · 已售 {{ p.sales_count }}
+        </div>
+        <div class="card-actions">
           <a class="btn btn-sm btn-ghost" href="/shop/{{ p.product_id }}">查看溯源</a>
           <form method="post" action="/shop/{{ p.product_id }}/cart" style="margin:0;">
             <input type="hidden" name="quantity" value="1" />
@@ -74,12 +102,8 @@
 
     <div class="pager">
       <span>第 {{ page }} / {{ pages }} 页</span>
-      {% if page > 1 %}
-      <a class="btn btn-sm btn-ghost" href="/shop?{{ prev_query }}">上一页</a>
-      {% endif %}
-      {% if page < pages %}
-      <a class="btn btn-sm btn-ghost" href="/shop?{{ next_query }}">下一页</a>
-      {% endif %}
+      {% if page > 1 %}<a class="btn btn-sm btn-ghost" href="{{ prev_href }}">上一页</a>{% endif %}
+      {% if page < pages %}<a class="btn btn-sm btn-ghost" href="{{ next_href }}">下一页</a>{% endif %}
     </div>
     {% else %}
     <p class="empty">没有符合条件的商品，试试放宽筛选条件。</p>

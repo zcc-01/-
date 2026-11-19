@@ -4,6 +4,7 @@
 三域整合后，这里是唯一的集中式模型注册点。
 """
 
+from app.catalog.models import Category  # noqa: F401
 from app.common.models import Farm, User  # noqa: F401
 from app.ops.models import Alert, AuditLog, CertApplication, ReviewLog  # noqa: F401
 from app.trace.models import Batch, ScanLog, TraceCode, TraceEvent  # noqa: F401

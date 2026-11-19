@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="贵妃芒">
+  <title>贵妃芒</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#fff7dc"/>
+      <stop offset="1" stop-color="#ffe08a"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#d17f22" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="rotate(-16)">
+<ellipse cx="0" cy="0" rx="112" ry="84" fill="#f2a03d"/>
+<ellipse cx="-42" cy="-26" rx="34" ry="24" fill="#ffe9a8" opacity=".45" transform="rotate(-18 -42 -26)"/>
+<path d="M60 -66 q28 -22 52 -10 q-18 30 -52 10 z" fill="#4f8f45"/>
+<path d="M66 -60 q-10 -20 6 -34" stroke="#d17f22" stroke-width="6" fill="none" stroke-linecap="round"/>
+</g>
+<ellipse cx="0" cy="98" rx="86" ry="12" fill="#d17f22" opacity=".12"/></g>
+</svg>

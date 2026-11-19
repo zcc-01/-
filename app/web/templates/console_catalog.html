@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}品类与商品 · {{ app_name }}{% endblock %}
+{% block subtitle %}品类与商品维护{% endblock %}
+{% block body_class %}wide{% endblock %}
+
+{% block content %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+
+  <div class="admin">
+    <aside class="admin-side">
+      <div class="who">
+        {% if nav_user %}
+        欢迎 {{ nav_user.display_name or nav_user.username }}<br />
+        <span>{{ '全平台视角' if is_operator else '本农场视角' }}</span>
+        {% else %}未登录{% endif %}
+      </div>
+      <a href="/console">经营看板</a>
+      <a href="/console/catalog" class="active">品类与商品</a>
+      <a href="/orders">订单管理</a>
+      <a href="/shop">返回前台</a>
+    </aside>
+
+    <div class="admin-main">
+      <section class="card">
+        <div class="section-head">
+          <h2>商品维护</h2>
+          <span class="muted" style="margin-left:auto;font-size:13px;">
+            {{ '全平台' if is_operator else '本农场' }}共 {{ stats.total }} 件 · 在售 {{ stats.on_sale }} · 下架 {{ stats.off_shelf }}
+          </span>
+        </div>
+
+        <div class="stat-grid" style="margin-bottom:12px;">
+          <div class="stat"><div class="k">商品总数</div><div class="v">{{ stats.total }}</div></div>
+          <div class="stat"><div class="k">在售</div><div class="v">{{ stats.on_sale }}</div></div>
+          <div class="stat"><div class="k">已下架</div><div class="v">{{ stats.off_shelf }}</div></div>
+          <div class="stat"><div class="k">首页推荐位</div><div class="v">{{ stats.recommended }}</div></div>
+          <div class="stat"><div class="k">未归类</div><div class="v">{{ stats.uncategorized }}</div></div>
+        </div>
+
+        <form class="filter-bar" method="get" action="/console/catalog">
+          <div class="filter-field" style="flex:1 1 200px;">
+            <label for="kw">商品名称</label>
+            <input id="kw" name="keyword" value="{{ keyword }}" placeholder="输入名称关键词" />
+          </div>
+          <div class="filter-field">
+            <label for="cat">分类</label>
+            <select id="cat" name="category">
+              <option value="">全部分类</option>
+              {% for c in categories %}
+              <option value="{{ c.code }}" {% if category == c.code %}selected{% endif %}>
+                {{ '　└ ' if c.level == 2 else '' }}{{ c.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-sm" type="submit">查询</button>
+            <a class="btn btn-sm btn-ghost" href="/console/catalog">重置</a>
+          </div>
+        </form>
+
+        {% if products %}
+        <div class="table-wrap">
+          <table class="table table-fixed">
+            <colgroup>
+              <col style="width:38%" /><col style="width:16%" />
+              <col style="width:28%" /><col style="width:18%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>商品</th><th>分类</th><th>价格 / 库存（可直接改）</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in products %}
+              <tr>
+                <td>
+                  <div class="cell-product">
+                    {% if p.image_url %}<img src="{{ p.image_url }}" alt="" />{% endif %}
+                    <div>
+                      <a href="/shop/{{ p.product_id }}">{{ p.name }}</a>
+                      <div class="meta-line" style="margin-top:2px;">
+                        {% if p.status == 'on_sale' %}<span class="tag ok">在售</span>
+                        {% else %}<span class="tag">已下架</span>{% endif %}
+                        {% if p.certified %}<span class="tag ok">认证</span>{% endif %}
+                        {% if p.is_recommended %}<span class="tag warn">推荐</span>{% endif %}
+                        <span class="muted" style="font-size:12px;">{{ p.spec or '未填规格' }} · 已售 {{ p.sales_count }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ p.category_path }}</td>
+                <td>
+                  <form method="post" action="/console/products/{{ p.product_id }}/quick" class="inline-form quick-form">
+                    <input name="price_yuan" value="{{ '%.2f'|format(p.price) }}" class="num" title="单价（元）" />
+                    <span class="muted">元 /</span>
+                    <input name="stock" value="{{ p.stock }}" class="num" title="库存" />
+                    <span class="muted">{{ p.unit }}</span>
+                    <button class="btn btn-sm btn-ghost" type="submit">保存</button>
+                  </form>
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <a class="btn btn-sm btn-ghost" href="/console/products/{{ p.product_id }}/edit">编辑</a>
+                    <form method="post" action="/console/products/{{ p.product_id }}/status" style="margin:0;">
+                      <input type="hidden" name="status" value="{{ 'off_shelf' if p.status == 'on_sale' else 'on_sale' }}" />
+                      <button class="btn btn-sm {% if p.status == 'on_sale' %}btn-danger{% endif %}" type="submit">
+                        {{ '下架' if p.status == 'on_sale' else '上架' }}
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty">没有符合条件的商品。农户在批次采收后即可上架商品（POST /api/products）。</p>
+        {% endif %}
+      </section>
+
+      <section class="card">
+        <div class="section-head">
+          <h2>分类管理</h2>
+          <span class="muted" style="margin-left:auto;font-size:13px;">两级分类 · 停用父类会级联停用子类</span>
+        </div>
+
+        {% if not is_operator %}
+        <p class="muted" style="font-size:13px;">分类目录由平台运营统一维护，农户可在商品编辑页选择已有分类。</p>
+        {% endif %}
+
+        {% if is_operator %}
+        <details class="cat-create">
+          <summary>＋ 新建分类</summary>
+          <form method="post" action="/console/categories" class="cat-form">
+            <div class="filter-field"><label>分类编码</label><input name="code" placeholder="fruit-drupe" required pattern="[a-z0-9][a-z0-9-]{1,31}" /></div>
+            <div class="filter-field"><label>分类名称</label><input name="name" placeholder="核果类" required /></div>
+            <div class="filter-field"><label>上级分类</label>
+              <select name="parent_id">
+                <option value="">（作为一级分类）</option>
+                {% for c in categories if c.level == 1 %}
+                <option value="{{ c.category_id }}">{{ c.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="filter-field"><label>图标</label><input name="icon" placeholder="🍑" style="width:60px;" /></div>
+            <div class="filter-field"><label>排序</label><input name="sort_no" value="0" style="width:70px;" /></div>
+            <div class="filter-field" style="flex:1 1 220px;"><label>描述</label><input name="description" placeholder="一句话说明该分类" /></div>
+            <div class="filter-actions"><button class="btn btn-sm" type="submit">创建</button></div>
+          </form>
+        </details>
+        {% endif %}
+
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>分类</th><th>编码</th><th>上级</th><th class="num">商品数</th><th>排序</th><th>状态</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              {% for c in categories %}
+              <tr class="cat-row">
+                <td>
+                  <span class="{{ 'cat-l2' if c.level == 2 else 'cat-l1' }}">{{ c.icon }} {{ c.name }}</span>
+                </td>
+                <td><code>{{ c.code }}</code></td>
+                <td>{{ c.parent_name or '—' }}</td>
+                <td class="num">{{ c.product_count }}</td>
+                <td>{{ c.sort_no }}</td>
+                <td>
+                  {% if c.enabled %}<span class="tag ok">启用</span>{% else %}<span class="tag">停用</span>{% endif %}
+                </td>
+                <td>
+                  {% if is_operator %}
+                  <div class="row-actions">
+                    <button class="btn btn-sm btn-ghost" type="button"
+                            onclick="toggleCat('{{ c.category_id }}')">编辑</button>
+                    <form method="post" action="/console/categories/{{ c.category_id }}/toggle" style="margin:0;">
+                      <input type="hidden" name="enabled" value="{{ 0 if c.enabled else 1 }}" />
+                      <button class="btn btn-sm btn-ghost" type="submit">{{ '停用' if c.enabled else '启用' }}</button>
+                    </form>
+                    <form method="post" action="/console/categories/{{ c.category_id }}/delete" style="margin:0;"
+                          onsubmit="return confirm('确认删除分类「{{ c.name }}」？分类下有商品或子类时会被拒绝。');">
+                      <button class="btn btn-sm btn-danger" type="submit">删除</button>
+                    </form>
+                  </div>
+                  {% else %}
+                  <span class="muted" style="font-size:13px;">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% if is_operator %}
+              <tr id="cat-edit-{{ c.category_id }}" class="cat-edit-row" hidden>
+                <td colspan="7">
+                  <form method="post" action="/console/categories/{{ c.category_id }}/update" class="cat-form">
+                    <div class="filter-field"><label>编码</label><input name="code" value="{{ c.code }}" required /></div>
+                    <div class="filter-field"><label>名称</label><input name="name" value="{{ c.name }}" required /></div>
+                    <div class="filter-field"><label>上级</label>
+                      <select name="parent_id">
+                        <option value="">（一级分类）</option>
+                        {% for p in categories if p.level == 1 and p.category_id != c.category_id %}
+                        <option value="{{ p.category_id }}" {% if c.parent_id == p.category_id %}selected{% endif %}>{{ p.name }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="filter-field"><label>图标</label><input name="icon" value="{{ c.icon }}" style="width:60px;" /></div>
+                    <div class="filter-field"><label>排序</label><input name="sort_no" value="{{ c.sort_no }}" style="width:70px;" /></div>
+                    <div class="filter-field" style="flex:1 1 200px;"><label>描述</label><input name="description" value="{{ c.description }}" /></div>
+                    <div class="filter-actions">
+                      <button class="btn btn-sm" type="submit">保存</button>
+                      <button class="btn btn-sm btn-ghost" type="button" onclick="toggleCat('{{ c.category_id }}')">收起</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+              {% endif %}
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function toggleCat(id) {
+    var row = document.getElementById('cat-edit-' + id);
+    if (row) row.hidden = !row.hidden;
+  }
+</script>
+{% endblock %}

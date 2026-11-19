@@ -13,17 +13,21 @@ from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import RedirectResponse
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.catalog.models import Category
+from app.catalog.schemas import CategoryCreate, CategoryUpdate
+from app.catalog.service import CategoryService
 from app.common.models import Farm, Role, User
 from app.core.deps import get_session
 from app.core.errors import BizError, Unauthenticated
 from app.core.security import decode_access_token, verify_password
 from app.ops.schemas import CertReview
 from app.ops.service import AlertService, CertService, DashboardService
-from app.trade.models import OrderStatus
-from app.trade.schemas import CartAdd, OrderCreate, ReviewCreate
+from app.trade.models import OrderStatus, Product
+from app.trade.schemas import CartAdd, OrderCreate, ProductUpdate, ReviewCreate
 from app.trade.service import CartService, OrderService, ProductService, ReviewService
 from app.web.context import ns, render
 
@@ -139,10 +143,12 @@ def shop_list(
     request: Request,
     keyword: str = "",
     category: str = "",
+    origin: str = "",
     price_min: str = "",
     price_max: str = "",
     sort: str = "new",
     certified_only: str = "",
+    in_stock: str = "",
     page: int = 1,
     db: Session = Depends(get_session),
 ):
@@ -159,32 +165,100 @@ def shop_list(
         db,
         keyword=keyword,
         category=category,
+        origin=origin,
         price_min=_yuan(price_min),
         price_max=_yuan(price_max),
         certified_only=bool(certified_only),
+        in_stock_only=bool(in_stock),
         sort=sort,
         page_no=page,
         size=12,
     )
     size = data["size"]
     pages = max(1, (data["total"] + size - 1) // size)
+
     base = {
         "keyword": keyword,
         "category": category,
+        "origin": origin,
         "price_min": price_min,
         "price_max": price_max,
         "sort": sort,
-        "certified_only": certified_only,
+        "certified_only": "1" if certified_only else "",
+        "in_stock": "1" if in_stock else "",
     }
+
+    def href(**over: object) -> str:
+        """当前筛选条件 + 覆盖项 → 链接，模板里不用再手拼查询串。"""
+        params = {**base, **{k: ("" if v is None else v) for k, v in over.items()}}
+        params = {k: str(v) for k, v in params.items() if str(v) != ""}
+        return "/shop?" + urlencode(params) if params else "/shop"
+
+    catalog = CategoryService.tree(db)
+    selected = CategoryService.get_by_code(db, category) if category else None
+    current_parent = selected
+    if selected is not None and selected.parent_id:
+        current_parent = db.get(Category, selected.parent_id)
+
+    tabs = [
+        {"code": "", "name": "全部", "icon": "🧺", "count": sum(c["product_count"] for c in catalog),
+         "href": href(category=""), "active": not category}
+    ]
+    for node in catalog:
+        tabs.append(
+            {
+                "code": node["code"],
+                "name": node["name"],
+                "icon": node["icon"],
+                "count": node["product_count"],
+                "href": href(category=node["code"]),
+                "active": current_parent is not None and current_parent.code == node["code"],
+            }
+        )
+
+    chips = []
+    if current_parent is not None:
+        chips.append(
+            {
+                "code": current_parent.code,
+                "name": "全部" + current_parent.name,
+                "href": href(category=current_parent.code),
+                "active": selected is not None and not selected.parent_id,
+            }
+        )
+        for child in current_parent.children:
+            chips.append(
+                {
+                    "code": child.code,
+                    "name": child.name,
+                    "href": href(category=child.code),
+                    "active": selected is not None and selected.code == child.code,
+                }
+            )
+
+    sorts = [
+        {"key": "new", "label": "最新上架", "href": href(sort="new")},
+        {"key": "price_asc", "label": "价格 ↑", "href": href(sort="price_asc")},
+        {"key": "price_desc", "label": "价格 ↓", "href": href(sort="price_desc")},
+        {"key": "sales", "label": "销量优先", "href": href(sort="sales")},
+    ]
+
     ctx = {
         "items": data["items"],
         "total": data["total"],
         "page": data["page"],
         "pages": pages,
-        "categories": ProductService.categories(db),
+        "tabs": tabs,
+        "chips": chips,
+        "sorts": sorts,
+        "sort": sort,
         "query": base,
-        "prev_query": urlencode({**base, "page": max(1, data["page"] - 1)}),
-        "next_query": urlencode({**base, "page": min(pages, data["page"] + 1)}),
+        "current_name": current_parent.name if current_parent else "",
+        "cert_href": href(certified_only="" if certified_only else "1"),
+        "stock_href": href(in_stock="" if in_stock else "1"),
+        "reset_href": "/shop",
+        "prev_href": href(page=max(1, data["page"] - 1)),
+        "next_href": href(page=min(pages, data["page"] + 1)),
         **_flash(request),
     }
     return render(request, "shop_list.html", ctx)
@@ -483,3 +557,275 @@ def console_alert_handle(
     except BizError as exc:
         return _go("/console", error=exc.message)
     return _go("/console", flash="预警单已更新")
+
+
+# ------------------------------------------------------- 品类与商品维护 UC-06/07
+def _require_staff(
+    request: Request, db: Session, allow: tuple[str, ...] = (Role.FARMER, Role.OPERATOR)
+) -> User | RedirectResponse:
+    """运营后台的统一入口守卫：消费者与监管人员只能看，不能改。"""
+    user = _require_user(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    if user.role not in allow:
+        return _go("/shop", error="该页面仅对农户与平台运营开放")
+    return user
+
+
+def _own_farm_ids(db: Session, user: User) -> list[str]:
+    """农户看自己的全部产地（一个人可能经营多个合作社）；运营看全平台。"""
+    if user.role != Role.FARMER:
+        return []
+    return list(db.scalars(select(Farm.farm_id).where(Farm.owner_id == user.user_id)).all()) or ["__none__"]
+
+
+@router.get("/console/catalog")
+def console_catalog(
+    request: Request,
+    keyword: str = "",
+    category: str = "",
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+
+    farm_ids = _own_farm_ids(db, user)
+    stats = ProductService.stats(db, farm_ids=farm_ids or None)
+    data = ProductService.list_products(
+        db,
+        keyword=keyword,
+        category=category,
+        include_off_shelf=True,
+        farm_ids=farm_ids or None,
+        sort="new",
+        size=50,
+    )
+    return render(
+        request,
+        "console_catalog.html",
+        {
+            "stats": stats,
+            "products": data["items"],
+            "total": data["total"],
+            "keyword": keyword,
+            "category": category,
+            "categories": CategoryService.flat(db),
+            "tree": CategoryService.tree(db, include_disabled=True, on_sale_only=False),
+            "is_operator": user.role == Role.OPERATOR,
+            **_flash(request),
+        },
+    )
+
+
+@router.post("/console/categories")
+def console_category_create(
+    request: Request,
+    code: str = Form(...),
+    name: str = Form(...),
+    parent_id: str = Form(""),
+    icon: str = Form(""),
+    image: str = Form(""),
+    sort_no: int = Form(0),
+    description: str = Form(""),
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db, allow=(Role.OPERATOR,))
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        CategoryService.create(
+            db,
+            CategoryCreate(
+                code=code,
+                name=name,
+                parent_id=parent_id or None,
+                icon=icon,
+                image=image,
+                sort_no=sort_no,
+                description=description,
+            ),
+        )
+    except (BizError, ValidationError) as exc:
+        message = getattr(exc, "message", "分类编码需为 2~32 位小写字母/数字/连字符")
+        return _go("/console/catalog", error=message)
+    return _go("/console/catalog", flash=f"分类「{name}」已创建")
+
+
+@router.post("/console/categories/{category_id}/update")
+def console_category_update(
+    request: Request,
+    category_id: str,
+    code: str = Form(...),
+    name: str = Form(...),
+    parent_id: str = Form(""),
+    icon: str = Form(""),
+    image: str = Form(""),
+    sort_no: int = Form(0),
+    description: str = Form(""),
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db, allow=(Role.OPERATOR,))
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        CategoryService.update(
+            db,
+            category_id,
+            CategoryUpdate(
+                code=code,
+                name=name,
+                parent_id=parent_id or None,
+                icon=icon,
+                image=image,
+                sort_no=sort_no,
+                description=description,
+            ),
+        )
+    except (BizError, ValidationError) as exc:
+        return _go("/console/catalog", error=getattr(exc, "message", "分类保存失败，请检查编码与上级分类"))
+    return _go("/console/catalog", flash=f"分类「{name}」已更新")
+
+
+@router.post("/console/categories/{category_id}/toggle")
+def console_category_toggle(
+    request: Request,
+    category_id: str,
+    enabled: int = Form(...),
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db, allow=(Role.OPERATOR,))
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        CategoryService.toggle(db, category_id, bool(enabled))
+    except BizError as exc:
+        return _go("/console/catalog", error=exc.message)
+    return _go("/console/catalog", flash="分类状态已更新（停用父类会级联停用子类）")
+
+
+@router.post("/console/categories/{category_id}/delete")
+def console_category_delete(
+    request: Request,
+    category_id: str,
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db, allow=(Role.OPERATOR,))
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        CategoryService.delete(db, category_id)
+    except BizError as exc:
+        return _go("/console/catalog", error=exc.message)
+    return _go("/console/catalog", flash="分类已删除")
+
+
+@router.get("/console/products/{product_id}/edit")
+def console_product_edit(
+    request: Request,
+    product_id: str,
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    product = db.get(Product, product_id)
+    if product is None:
+        return _go("/console/catalog", error="商品不存在")
+    farm = db.get(Farm, product.farm_id)
+    if user.role == Role.FARMER and (farm is None or farm.owner_id != user.user_id):
+        return _go("/console/catalog", error="只能维护本农场的商品")
+    return render(
+        request,
+        "console_product_edit.html",
+        {
+            "p": ProductService.detail(db, product_id),
+            "categories": CategoryService.flat(db),
+            **_flash(request),
+        },
+    )
+
+
+@router.post("/console/products/{product_id}/update")
+async def console_product_update(
+    request: Request,
+    product_id: str,
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    form = await request.form()
+
+    def _num(key: str) -> float | None:
+        raw = str(form.get(key, "")).strip()
+        if not raw:
+            return None
+        try:
+            return float(raw)
+        except ValueError:
+            return None
+
+    payload = ProductUpdate(
+        name=str(form.get("name", "")).strip() or None,
+        category_id=str(form.get("category_id", "")).strip() or None,
+        price_yuan=_num("price_yuan"),
+        stock=int(_num("stock")) if _num("stock") is not None else None,
+        unit=str(form.get("unit", "")).strip() or None,
+        spec=str(form.get("spec", "")).strip(),
+        grade=str(form.get("grade", "")).strip(),
+        origin=str(form.get("origin", "")).strip(),
+        shelf_life=str(form.get("shelf_life", "")).strip(),
+        storage=str(form.get("storage", "")).strip(),
+        image_url=str(form.get("image_url", "")).strip(),
+        tags=str(form.get("tags", "")).strip(),
+        description=str(form.get("description", "")).strip(),
+        status=str(form.get("status", "")).strip() or None,
+        is_recommended=form.get("is_recommended") is not None,
+    )
+    try:
+        ProductService.update(db, user, product_id, payload)
+    except (BizError, ValidationError) as exc:
+        message = getattr(exc, "message", "保存失败，请检查填写内容")
+        return _go(f"/console/products/{product_id}/edit", error=message)
+    return _go(f"/console/products/{product_id}/edit", flash="商品信息已保存")
+
+
+@router.post("/console/products/{product_id}/status")
+def console_product_status(
+    request: Request,
+    product_id: str,
+    status: str = Form(...),
+    db: Session = Depends(get_session),
+):
+    user = _require_staff(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        ProductService.set_status(db, user, product_id, status)
+    except BizError as exc:
+        return _go("/console/catalog", error=exc.message)
+    return _go("/console/catalog", flash="商品已" + ("上架" if status == "on_sale" else "下架"))
+
+
+@router.post("/console/products/{product_id}/quick")
+def console_product_quick_edit(
+    request: Request,
+    product_id: str,
+    price_yuan: str = Form(""),
+    stock: str = Form(""),
+    db: Session = Depends(get_session),
+):
+    """列表页行内改价/改库存：运营最常用的两个动作，不必进编辑页。"""
+    user = _require_staff(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    try:
+        payload = ProductUpdate(
+            price_yuan=float(price_yuan) if price_yuan.strip() else None,
+            stock=int(stock) if stock.strip() else None,
+        )
+        ProductService.update(db, user, product_id, payload)
+    except (BizError, ValidationError, ValueError) as exc:
+        return _go("/console/catalog", error=getattr(exc, "message", "价格或库存填写有误"))
+    return _go("/console/catalog", flash="价格/库存已更新")

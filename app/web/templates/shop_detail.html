@@ -2,55 +2,83 @@
 
 {% block title %}{{ p.name }} · {{ app_name }}{% endblock %}
 {% block subtitle %}商品详情{% endblock %}
+{% block body_class %}wide{% endblock %}
 
 {% block content %}
   {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
   {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
 
-  <section class="card">
-    <div class="grid" style="grid-template-columns:minmax(180px,260px) 1fr;align-items:start;">
-      <div class="thumb {{ 'tea' if '茶' in p.name else ('nut' if '核桃' in p.name else 'fruit') }}"
-           style="height:200px;font-size:44px;">{{ p.category[:1] }}</div>
+  <nav class="crumb">
+    <a href="/">首页</a><span>/</span>
+    <a href="/shop">商品信息</a><span>/</span>
+    {% if p.category_code %}<a href="/shop?category={{ p.category_code }}">{{ p.category_path }}</a>
+    {% else %}<span>{{ p.category_path }}</span>{% endif %}
+    <span>/</span><span class="muted">{{ p.name }}</span>
+  </nav>
 
-      <div>
-        <h2 style="margin:0 0 8px;">{{ p.name }}</h2>
-        <div class="price" style="font-size:24px;">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
-        <p class="muted" style="font-size:13px;margin:6px 0 12px;">
-          {% if p.certified %}<span class="tag ok">产地已认证</span>{% endif %}
-          {% if p.chain_ok %}<span class="tag ok">溯源链完整</span>{% else %}<span class="tag bad">溯源链异常</span>{% endif %}
-          <span class="tag">库存 {{ p.stock }}</span>
-          <span class="tag">已售 {{ p.sales_count }}</span>
-        </p>
-
-        <table class="attr-table">
-          <tr><th>产地</th><td>{{ p.farm_name }}{% if p.farm_province %}（{{ p.farm_province }}{{ p.farm_city }}）{% endif %}</td></tr>
-          <tr><th>品类</th><td>{{ p.category }} / {{ p.crop_name or p.name }}</td></tr>
-          <tr><th>溯源批次</th><td><code>{{ p.batch_no }}</code> · 环节 {{ p.event_count }} 条</td></tr>
-          <tr><th>种植 / 采收</th><td>{{ p.plant_date or '—' }} / {{ p.harvest_date or '—' }}</td></tr>
-          <tr><th>销售方式</th><td>产地直供 · 平台担保交易</td></tr>
-        </table>
-
-        <form method="post" action="/shop/{{ p.product_id }}/cart" style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-          <div class="stepper">
-            <button type="button" onclick="var i=this.parentNode.querySelector('input');i.value=Math.max(1,+i.value-1)">−</button>
-            <input name="quantity" type="number" min="1" max="{{ p.stock or 1 }}" value="1" />
-            <button type="button" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min({{ p.stock or 1 }},+i.value+1)">+</button>
-          </div>
-          <button class="btn" type="submit" {% if p.status != 'on_sale' or p.stock < 1 %}disabled{% endif %}>
-            {% if p.stock < 1 %}已售罄{% else %}加入购物车{% endif %}
-          </button>
-          <button class="btn btn-ghost" type="submit" name="buy" value="1"
-                  {% if p.status != 'on_sale' or p.stock < 1 %}disabled{% endif %}>立即购买</button>
-          <a class="btn btn-ghost" href="/cart">去购物车</a>
-        </form>
+  <section class="card detail-top">
+    <div class="detail-media">
+      {% if p.image_url %}
+      <img class="cover cover-lg" src="{{ p.image_url }}" alt="{{ p.name }}" />
+      {% else %}
+      <div class="thumb" style="height:300px;font-size:56px;">{{ p.category[:1] }}</div>
+      {% endif %}
+      <div class="media-tags">
+        {% if p.certified %}<span class="tag ok">产地已认证</span>{% endif %}
+        {% if p.chain_ok %}<span class="tag ok">溯源链完整</span>{% else %}<span class="tag bad">溯源链异常</span>{% endif %}
+        {% if p.rating %}<span class="tag warn">评分 {{ p.rating }}</span>{% endif %}
       </div>
     </div>
 
-    {% if p.description %}
-    <h3 style="margin-top:20px;font-size:16px;">商品详情</h3>
-    <p class="muted" style="font-size:14px;">{{ p.description }}</p>
-    {% endif %}
+    <div class="detail-info">
+      <h2 style="margin:0 0 6px;">{{ p.name }}</h2>
+      <p class="muted" style="font-size:13px;margin:0 0 10px;">
+        {{ p.category_path }} · {{ p.origin or p.farm_name }}
+      </p>
+      <div class="price" style="font-size:26px;">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
+
+      {% if p.tags %}
+      <div class="chips-row" style="margin:10px 0;">
+        {% for t in p.tags %}<span class="chip">{{ t }}</span>{% endfor %}
+      </div>
+      {% endif %}
+
+      <table class="attr-table">
+        <tr><th>规格</th><td>{{ p.spec or '—' }}</td></tr>
+        <tr><th>等级</th><td>{{ p.grade or '—' }}</td></tr>
+        <tr><th>产地</th><td>{{ p.origin or '—' }}{% if p.farm_name %}（{{ p.farm_name }}）{% endif %}</td></tr>
+        <tr><th>保质期</th><td>{{ p.shelf_life or '—' }}</td></tr>
+        <tr><th>储存</th><td>{{ p.storage or '—' }}</td></tr>
+        <tr><th>溯源批次</th><td><code>{{ p.batch_no or '—' }}</code>{% if p.event_count %} · 环节 {{ p.event_count }} 条{% endif %}</td></tr>
+        <tr><th>种植 / 采收</th><td>{{ p.plant_date or '—' }} / {{ p.harvest_date or '—' }}</td></tr>
+        <tr><th>销售方式</th><td>产地直供 · 平台担保交易</td></tr>
+      </table>
+
+      <form method="post" action="/shop/{{ p.product_id }}/cart" style="margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div class="stepper">
+          <button type="button" onclick="var i=this.parentNode.querySelector('input');i.value=Math.max(1,+i.value-1)">−</button>
+          <input name="quantity" type="number" min="1" max="{{ p.stock or 1 }}" value="1" />
+          <button type="button" onclick="var i=this.parentNode.querySelector('input');i.value=Math.min({{ p.stock or 1 }},+i.value+1)">+</button>
+        </div>
+        <button class="btn" type="submit" {% if p.status != 'on_sale' or p.stock < 1 %}disabled{% endif %}>
+          {% if p.stock < 1 %}已售罄{% else %}加入购物车{% endif %}
+        </button>
+        <button class="btn btn-ghost" type="submit" name="buy" value="1"
+                {% if p.status != 'on_sale' or p.stock < 1 %}disabled{% endif %}>立即购买</button>
+        <a class="btn btn-ghost" href="/cart">去购物车</a>
+      </form>
+      <p class="muted" style="font-size:12px;margin:8px 0 0;">
+        库存 {{ p.stock }} {{ p.unit }} · 已售 {{ p.sales_count }} · 下单后 30 分钟内完成支付
+      </p>
+    </div>
   </section>
+
+  {% if p.description %}
+  <section class="card">
+    <h2>商品详情</h2>
+    <p class="muted" style="font-size:14px;">{{ p.description }}</p>
+  </section>
+  {% endif %}
 
   {% if p.trace_code %}
   <section class="card">
@@ -58,6 +86,24 @@
     <p class="muted">下方码值可直接打开扫码溯源页，查看完整生产履历与链校验结论。</p>
     <p><a class="btn" href="/trace/{{ p.trace_code }}">查看溯源档案</a></p>
     <p class="muted">示例码：<code>{{ p.trace_code }}</code></p>
+  </section>
+  {% endif %}
+
+  {% if p.related %}
+  <section class="card">
+    <div class="section-head"><h2>同类推荐</h2><a class="more" href="/shop?category={{ p.category_code }}">更多 &gt;</a></div>
+    <div class="grid">
+      {% for r in p.related %}
+      <div class="product-card">
+        <a class="cover-link" href="/shop/{{ r.product_id }}">
+          {% if r.image_url %}<img class="cover" src="{{ r.image_url }}" alt="{{ r.name }}" loading="lazy" />
+          {% else %}<div class="thumb">{{ r.category[:1] }}</div>{% endif %}
+        </a>
+        <h3><a href="/shop/{{ r.product_id }}">{{ r.name }}</a></h3>
+        <div class="price">￥{{ '%.2f'|format(r.price) }} <small>/ {{ r.unit }}</small></div>
+      </div>
+      {% endfor %}
+    </div>
   </section>
   {% endif %}
 

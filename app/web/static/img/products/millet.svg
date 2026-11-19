@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="沁州黄小米">
+  <title>沁州黄小米</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#fbf3da"/>
+      <stop offset="1" stop-color="#f0dfa8"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#c39623" opacity=".14"/>
+  <g transform="translate(300 250)"><path d="M-104 -4 h208 l-16 96 q-4 16 -20 16 h-136 q-16 0 -20 -16 z" fill="#efe6cf"/>
+<path d="M-104 -4 h208 l-4 24 h-200 z" fill="#c39623" opacity=".18"/>
+<ellipse cx="0" cy="2" rx="104" ry="18" fill="#e8b93b" opacity=".25"/>
+<circle cx="-38" cy="-10" r="7" fill="#e8b93b"/><circle cx="-40" cy="-12" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="-16" cy="-20" r="7" fill="#e8b93b"/><circle cx="-18" cy="-22" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="6" cy="-14" r="7" fill="#e8b93b"/><circle cx="4" cy="-16" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="28" cy="-18" r="7" fill="#e8b93b"/><circle cx="26" cy="-20" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="-30" cy="10" r="7" fill="#e8b93b"/><circle cx="-32" cy="8" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="-6" cy="4" r="7" fill="#e8b93b"/><circle cx="-8" cy="2" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="18" cy="8" r="7" fill="#e8b93b"/><circle cx="16" cy="6" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="36" cy="2" r="7" fill="#e8b93b"/><circle cx="34" cy="0" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="-20" cy="26" r="7" fill="#e8b93b"/><circle cx="-22" cy="24" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="2" cy="30" r="7" fill="#e8b93b"/><circle cx="0" cy="28" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="24" cy="26" r="7" fill="#e8b93b"/><circle cx="22" cy="24" r="2.6" fill="#ffffff" opacity=".6"/><circle cx="-42" cy="24" r="7" fill="#e8b93b"/><circle cx="-44" cy="22" r="2.6" fill="#ffffff" opacity=".6"/>
+<path d="M-60 -22 q18 -34 46 -40 q-4 30 -22 42 z" fill="#a8b96a"/>
+<path d="M-2 -26 q16 -34 44 -40 q-2 30 -20 42 z" fill="#8fa653"/></g>
+</svg>

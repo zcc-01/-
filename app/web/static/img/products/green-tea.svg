@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="绿茶">
+  <title>绿茶</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#eef7ed"/>
+      <stop offset="1" stop-color="#cfe7ce"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#356541" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="translate(-52 -34) rotate(-24)"><path d="M0 0 q28 -22 62 -6 q-30 30 -62 6 z" fill="#4c8b57"/><path d="M0 0 q30 -8 58 -4" stroke="#356541" stroke-width="3" opacity=".5" fill="none"/></g><g transform="translate(-10 -58) rotate(6)"><path d="M0 0 q28 -22 62 -6 q-30 30 -62 6 z" fill="#4c8b57"/><path d="M0 0 q30 -8 58 -4" stroke="#356541" stroke-width="3" opacity=".5" fill="none"/></g><g transform="translate(34 -40) rotate(26)"><path d="M0 0 q28 -22 62 -6 q-30 30 -62 6 z" fill="#4c8b57"/><path d="M0 0 q30 -8 58 -4" stroke="#356541" stroke-width="3" opacity=".5" fill="none"/></g><g transform="translate(-28 10) rotate(-8)"><path d="M0 0 q28 -22 62 -6 q-30 30 -62 6 z" fill="#4c8b57"/><path d="M0 0 q30 -8 58 -4" stroke="#356541" stroke-width="3" opacity=".5" fill="none"/></g><g transform="translate(18 6) rotate(18)"><path d="M0 0 q28 -22 62 -6 q-30 30 -62 6 z" fill="#4c8b57"/><path d="M0 0 q30 -8 58 -4" stroke="#356541" stroke-width="3" opacity=".5" fill="none"/></g>
+<path d="M-92 52 h184 l-18 42 q-6 14 -22 14 h-104 q-16 0 -22 -14 z" fill="#fbf9f2"/>
+<path d="M-92 52 h184 l-4 12 h-176 z" fill="#4c8b57" opacity=".35"/>
+<path d="M-118 46 q118 -22 236 0" stroke="#ffffff" stroke-width="7" fill="none" opacity=".8"/>
+<path d="M24 30 q22 -34 4 -52" stroke="#356541" stroke-width="4" fill="none" opacity=".4"/></g>
+</svg>

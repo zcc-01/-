@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="红富士苹果">
+  <title>红富士苹果</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#fdeef0"/>
+      <stop offset="1" stop-color="#f9c9d1"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#b02a1d" opacity=".14"/>
+  <g transform="translate(300 250)"><path d="M0 -56 c-26 -40 -104 -34 -112 34 c-8 66 42 126 76 126 c16 0 26 -8 36 -8
+c10 0 20 8 36 8 c34 0 84 -60 76 -126 c-8 -68 -86 -74 -112 -34 z" fill="#d93a2b"/>
+<path d="M0 -56 c-26 -40 -104 -34 -112 34 c-8 66 42 126 76 126 c10 0 18 -3 26 -6 z"
+ fill="#b02a1d" opacity=".18"/>
+<path d="M2 -60 q-8 -34 8 -58" stroke="#b02a1d" stroke-width="11" stroke-linecap="round" fill="none"/>
+<path d="M14 -92 q46 -30 66 -4 q-30 34 -66 4 z" fill="#4f8f45"/>
+<ellipse cx="-44" cy="10" rx="22" ry="34" fill="#ffffff" opacity=".18" transform="rotate(-18 -44 10)"/></g>
+</svg>

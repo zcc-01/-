@@ -29,3 +29,9 @@ exclude = [".git", ".venv", "data", "docs"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 ignore = ["B008"]  # FastAPI 的 Depends(...) 默认参数写法
+
+[tool.ruff.lint.per-file-ignores]
+# 演示数据与 SVG 生成脚本里都是长中文描述/长路径串，按 110 折行会毁掉可读性
+"app/catalog/seed.py" = ["E501"]
+"scripts/make_assets.py" = ["E501"]
+"tests/test_catalog.py" = ["E501"]

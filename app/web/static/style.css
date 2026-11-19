@@ -583,3 +583,200 @@ a:hover { text-decoration: underline; }
   .banner-text h1 { font-size: 20px; }
   .topbar-menu { gap: 16px; font-size: 14px; overflow-x: auto; }
 }
+
+/* ==========================================================================
+   品类域：分类导航、筛选条、商品配图与后台维护
+   - 前台用 .wide 放宽版心，商品网格才能排到 3~4 列
+   - 配图统一按 3:2 裁切（object-fit: cover），避免不同图源尺寸不一撑破卡片
+   ========================================================================== */
+.wide .wrap { max-width: 1120px; }
+
+/* --- 顶栏横幅里的配图点缀 --- */
+.banner-art {
+  position: absolute; right: 24px; top: 18px;
+  display: flex; gap: 10px; opacity: .95;
+}
+.banner-art img {
+  width: 96px; height: 96px; border-radius: 50%;
+  background: rgba(255,255,255,.75);
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+@media (max-width: 860px) { .banner-art { display: none; } }
+
+/* --- 面包屑 --- */
+.crumb {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  font-size: 13px; color: var(--muted); margin-bottom: 12px;
+}
+.crumb a { color: var(--muted); }
+.crumb a:hover { color: var(--green); }
+.crumb span { color: #b7c2ba; }
+
+/* --- 筛选条 --- */
+.filter-bar {
+  display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+  background: #fafbf8; border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px 14px; margin: 10px 0;
+}
+.filter-field { display: flex; flex-direction: column; gap: 4px; }
+.filter-field label { font-size: 12px; color: var(--muted); }
+.filter-field input, .filter-field select {
+  padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: 14px; font-family: inherit; background: #fff; color: var(--text);
+}
+.filter-field input:focus, .filter-field select:focus {
+  outline: 2px solid var(--green-soft); border-color: var(--green);
+}
+.filter-actions { display: flex; gap: 8px; align-items: center; }
+.filter-actions .btn, .filter-bar .btn { margin-top: 0; }
+.price-range { display: flex; align-items: center; gap: 6px; }
+.price-range input { width: 72px; }
+.price-range span { color: var(--muted); }
+
+/* --- 分类 tab 与二级 chip --- */
+.cat-tabs { gap: 18px; overflow-x: auto; white-space: nowrap; }
+.cat-tabs a { display: inline-flex; align-items: center; gap: 5px; }
+.cat-icon { font-size: 15px; }
+.cat-count {
+  font-size: 11px; color: var(--muted); background: #eef1ee;
+  border-radius: 999px; padding: 0 6px; line-height: 1.6;
+}
+.cat-tabs a.active .cat-count { background: var(--green-soft); color: var(--green); }
+
+.chips-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 2px; }
+.chip-link {
+  font-size: 13px; color: var(--text); text-decoration: none;
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: 4px 12px; background: #fff;
+}
+.chip-link:hover { border-color: var(--green); color: var(--green); }
+.chip-link.active { background: var(--green-soft); border-color: #cfe3d6; color: var(--green); font-weight: 600; }
+
+/* --- 商品卡：配图、标签行、操作行 --- */
+.cover-link { display: block; }
+.cover {
+  width: 100%; height: 150px; object-fit: cover;
+  border-radius: 10px; display: block; background: #f1f4ef;
+}
+.cover-lg { height: 300px; border-radius: 12px; }
+.card-actions { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.card-actions .btn { margin-top: 0; }
+.meta-line { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; }
+
+/* --- 详情页两栏 --- */
+.detail-top {
+  display: grid; grid-template-columns: minmax(240px, 360px) 1fr;
+  gap: 24px; align-items: start;
+}
+.detail-media { display: flex; flex-direction: column; gap: 10px; }
+.media-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.detail-info { min-width: 0; }
+.detail-info .attr-table { margin-top: 12px; }
+@media (max-width: 760px) {
+  .detail-top { grid-template-columns: 1fr; gap: 16px; }
+  .cover-lg { height: 220px; }
+}
+
+/* --- 首页分类卡 --- */
+.cat-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px; margin-top: 12px;
+}
+.cat-card {
+  display: flex; flex-direction: column; gap: 4px;
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px; text-decoration: none; color: var(--text); background: #fff;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.cat-card:hover { border-color: #c8d6cc; transform: translateY(-1px); text-decoration: none; }
+.cat-card img { width: 100%; height: 96px; object-fit: cover; border-radius: 9px; background: #f1f4ef; }
+.cat-name { font-size: 14px; font-weight: 600; }
+.cat-sub { font-size: 12px; color: var(--muted); }
+
+/* --- 后台：商品维护表 --- */
+.cell-product { display: flex; gap: 10px; align-items: center; min-width: 190px; }
+.cell-product img {
+  width: 42px; height: 42px; border-radius: 8px; object-fit: cover;
+  background: #f1f4ef; flex: none;
+}
+.inline-form { display: inline-flex; gap: 6px; align-items: center; margin: 0; }
+.inline-form input {
+  padding: 4px 7px; border: 1px solid var(--line); border-radius: 6px;
+  font-size: 13px; font-family: inherit; text-align: right;
+}
+.inline-form .btn { margin-top: 0; }
+
+/* --- 后台：分类树表 --- */
+.cat-l1 { font-weight: 600; }
+.cat-l2 { padding-left: 18px; color: #3f5147; }
+.cat-l2::before { content: "└ "; color: #b7c2ba; }
+.cat-create { margin: 10px 0 14px; }
+.cat-create summary {
+  cursor: pointer; font-size: 14px; color: var(--green);
+  background: var(--green-soft); border-radius: 9px; padding: 8px 12px;
+  display: inline-block;
+}
+.cat-form {
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+  border: 1px dashed var(--line); border-radius: 10px;
+  padding: 12px; margin-top: 10px; background: #fbfcfa;
+}
+.cat-form .form-row, .cat-form .filter-field { margin-bottom: 0; }
+.row-detail summary {
+  cursor: pointer; font-size: 13px; color: var(--green);
+  display: inline-block; margin-right: 6px;
+}
+.row-detail[open] { margin-bottom: 8px; }
+
+/* --- 后台：商品编辑页 --- */
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; }
+@media (max-width: 900px) { .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
+.edit-form .form-row { margin-bottom: 0; }
+.edit-actions { display: flex; gap: 10px; margin-top: 16px; }
+.edit-preview { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }
+.edit-preview .cover-lg { height: 190px; }
+@media (max-width: 760px) { .edit-preview { grid-template-columns: 1fr; } }
+
+.img-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.img-picker img {
+  width: 52px; height: 40px; object-fit: cover; border-radius: 6px;
+  border: 1px solid var(--line); cursor: pointer; background: #f1f4ef;
+}
+.img-picker img:hover { border-color: var(--green); }
+
+.check-line { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--text); }
+.check-line input { width: 16px; height: 16px; }
+
+/* --- 修正：双层顶栏必须纵向排列（.topbar .wrap 早先被设成 flex，两个子块会并排） --- */
+.topbar .wrap { flex-direction: column; align-items: stretch; gap: 0; }
+
+/* 商品卡底部说明保持两行高度，避免同一行卡片高低不齐 */
+.product-card .muted.card-line { min-height: 40px; }
+
+/* 后台表格里的行内编辑表单允许换行 */
+.inline-form { flex-wrap: wrap; }
+
+/* 行内改价：单行排列，输入框只占必要宽度 */
+.quick-form { flex-wrap: nowrap; }
+.quick-form input.num {
+  width: 68px; padding: 4px 6px; border: 1px solid var(--line);
+  border-radius: 6px; font-size: 13px; font-family: inherit; text-align: right;
+}
+.quick-form input.num + span, .quick-form span { white-space: nowrap; }
+
+/* 后台表格固定列宽，避免「价格/库存」列被商品名挤到换行 */
+.table-fixed { table-layout: fixed; }
+.table-fixed td, .table-fixed th { overflow-wrap: anywhere; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.row-actions .btn { margin-top: 0; }
+.quick-form { gap: 4px; }
+.quick-form input.num { width: 64px; }
+
+/* 保存按钮不换行，输入框再收窄一点 */
+.quick-form .btn { white-space: nowrap; flex: none; padding: 5px 9px; }
+.quick-form input.num { width: 58px; }
+
+/* 分类编辑行：整行展开，避免表单被挤在操作列里 */
+.cat-edit-row td { background: #fbfcfa; padding: 0 12px 12px; }
+.cat-edit-row .cat-form { margin-top: 0; }

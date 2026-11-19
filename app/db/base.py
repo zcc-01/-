@@ -72,7 +72,13 @@ def get_db() -> Iterator:
 
 
 def init_db() -> None:
-    """建表。课程作业量级用 create_all 足够；结构变更走 sql/ 下的迁移脚本。"""
+    """建表 + 补列。课程作业量级用 create_all 足够；结构变更走 sql/ 下的迁移脚本。
+
+    create_all 只建缺失的表，不会给已有表补字段，所以品类/商品属性这类
+    「老库升级」场景要再跑一次 ensure_columns（见 app/db/migrate.py）。
+    """
     from app import models_registry  # noqa: F401  确保所有模型完成注册
+    from app.db.migrate import ensure_columns
 
     Base.metadata.create_all(bind=engine)
+    ensure_columns(engine)

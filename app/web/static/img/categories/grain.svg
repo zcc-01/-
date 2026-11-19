@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="稻花香大米">
+  <title>稻花香大米</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f8f5ea"/>
+      <stop offset="1" stop-color="#e8e0c8"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#d8cfb6" opacity=".14"/>
+  <g transform="translate(300 250)"><path d="M-108 8 h216 a108 92 0 0 1 -216 0 z" fill="#dfe6dc"/>
+<path d="M-108 8 h216 a108 92 0 0 1 -216 0 z" fill="none" stroke="#d8cfb6" stroke-width="3" opacity=".35"/>
+<path d="M-90 -10 q90 -72 180 0 z" fill="#f6f1e2" stroke="#d8cfb6" stroke-width="2.5" stroke-opacity=".28"/>
+<ellipse cx="-30" cy="-16" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(14 -30 -16)"/><ellipse cx="-8" cy="-24" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(-12 -8 -24)"/><ellipse cx="14" cy="-20" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(14 14 -20)"/><ellipse cx="32" cy="-8" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(4 32 -8)"/><ellipse cx="-36" cy="4" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(-12 -36 4)"/><ellipse cx="-12" cy="-2" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(6 -12 -2)"/><ellipse cx="10" cy="2" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(-8 10 2)"/><ellipse cx="30" cy="8" rx="7" ry="4" fill="#fffdf4" opacity=".95" stroke="#d8cfb6" stroke-width="1" transform="rotate(18 30 8)"/>
+<rect x="-116" y="0" width="232" height="14" rx="7" fill="#ffffff" opacity=".85"/>
+<g stroke="#b9a87f" stroke-width="6" stroke-linecap="round" opacity=".95">
+  <path d="M82 -46 l56 -40"/><path d="M90 -26 l60 -26"/>
+</g></g>
+</svg>

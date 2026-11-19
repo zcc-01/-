@@ -2,6 +2,7 @@
 
 {% block title %}{{ app_name }} · 产地直供{% endblock %}
 {% block subtitle %}产地直供 · 一物一码{% endblock %}
+{% block body_class %}wide{% endblock %}
 
 {% block content %}
   <section class="banner">
@@ -9,44 +10,60 @@
       <h1>扫码即见，从田间到餐桌</h1>
       <p>一物一码 · 哈希链存证 · 产地认证 · 直供到家</p>
     </div>
+    <div class="banner-art">
+      <img src="/static/img/products/navel-orange.svg" alt="水果" />
+      <img src="/static/img/products/bok-choy.svg" alt="蔬菜" />
+      <img src="/static/img/products/wuchang-rice.svg" alt="粮油" />
+    </div>
     <div class="banner-dots"><i class="on"></i><i></i><i></i><i></i></div>
   </section>
 
   <div class="notice">
     <strong>公告</strong>
-    <span>平台已接入 {{ product_total }} 件产地直供商品，全部支持扫码查看生产履历；认证产地商品带「产地已认证」标识。</span>
+    <span>平台已接入 {{ product_total }} 件产地直供商品，覆盖水果、蔬菜、粮油、茶叶、坚果、干货与禽蛋七大类；认证产地商品带「产地已认证」标识。</span>
   </div>
 
   <section class="card">
     <div class="section-head">
-      <h2>商品推荐</h2>
-      <a class="more" href="/shop">更多 &gt;</a>
+      <h2>按品类选购</h2>
+      <a class="more" href="/shop">全部商品 &gt;</a>
     </div>
-
-    {% if categories %}
-    <div class="tabs">
-      <a class="active" href="/shop">全部</a>
-      {% for c in categories %}
-      <a href="/shop?category={{ c|urlencode }}">{{ c }}</a>
+    <div class="cat-grid">
+      {% for c in catalog %}
+      <a class="cat-card" href="/shop?category={{ c.code }}">
+        <img src="{{ c.image }}" alt="{{ c.name }}" loading="lazy" />
+        <span class="cat-name">{{ c.icon }} {{ c.name }}</span>
+        <span class="cat-sub">{{ c.product_count }} 件 · {{ c.children|length }} 个子类</span>
+      </a>
       {% endfor %}
     </div>
-    {% endif %}
+  </section>
+
+  <section class="card">
+    <div class="section-head">
+      <h2>当季推荐</h2>
+      <a class="more" href="/shop?sort=sales">更多 &gt;</a>
+    </div>
 
     {% if featured %}
     <div class="grid">
       {% for p in featured %}
       <div class="product-card">
-        <a href="/shop/{{ p.product_id }}" style="text-decoration:none;">
-          <div class="thumb {{ 'tea' if '茶' in p.name else ('nut' if '核桃' in p.name else 'fruit') }}">{{ p.category[:1] }}</div>
+        <a class="cover-link" href="/shop/{{ p.product_id }}">
+          {% if p.image_url %}
+          <img class="cover" src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy" />
+          {% else %}
+          <div class="thumb">{{ p.category[:1] }}</div>
+          {% endif %}
         </a>
         <h3><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></h3>
-        <div class="muted" style="font-size:13px;">
-          {{ p.category }}
+        <div class="meta-line">
+          <span class="tag">{{ p.category }}</span>
           {% if p.certified %}<span class="tag ok">产地已认证</span>{% endif %}
         </div>
         <div class="price">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
-        <div class="muted" style="font-size:13px;">库存 {{ p.stock }} · 已售 {{ p.sales_count }}</div>
-        <div style="margin-top:auto;display:flex;gap:8px;">
+        <div class="muted card-line" style="font-size:13px;">{{ p.spec or p.origin }} · 已售 {{ p.sales_count }}</div>
+        <div class="card-actions">
           <a class="btn btn-sm btn-ghost" href="/shop/{{ p.product_id }}">查看详情</a>
           <a class="btn btn-sm" href="/shop/{{ p.product_id }}">立即购买</a>
         </div>
@@ -67,8 +84,12 @@
     <div class="grid">
       {% for p in certified %}
       <div class="product-card">
+        <a class="cover-link" href="/shop/{{ p.product_id }}">
+          {% if p.image_url %}<img class="cover" src="{{ p.image_url }}" alt="{{ p.name }}" loading="lazy" />
+          {% else %}<div class="thumb">{{ p.category[:1] }}</div>{% endif %}
+        </a>
         <h3><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></h3>
-        <div class="muted" style="font-size:13px;"><span class="tag ok">产地已认证</span> 已售 {{ p.sales_count }}</div>
+        <div class="meta-line"><span class="tag ok">产地已认证</span><span class="muted">已售 {{ p.sales_count }}</span></div>
         <div class="price">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
       </div>
       {% endfor %}
@@ -85,13 +106,13 @@
         <a class="btn btn-sm btn-ghost" href="/trace/PC-20251101-DEMO-ITM0001">打开溯源档案</a>
       </div>
       <div class="product-card">
-        <h3>交易域</h3>
-        <p class="muted" style="font-size:13px;margin:0;">商品检索、加购、下单、支付、发货收货与评价（UC-06～UC-10）。</p>
-        <a class="btn btn-sm btn-ghost" href="/cart">购物车</a>
+        <h3>品类与交易域</h3>
+        <p class="muted" style="font-size:13px;margin:0;">七大品类目录、检索筛选、加购下单、支付发货与评价（UC-06～UC-10）。</p>
+        <a class="btn btn-sm btn-ghost" href="/shop">逛逛商品</a>
       </div>
       <div class="product-card">
         <h3>用户与运营域</h3>
-        <p class="muted" style="font-size:13px;margin:0;">登录鉴权、产地认证审核、经营看板与异常预警（UC-11～UC-15）。</p>
+        <p class="muted" style="font-size:13px;margin:0;">登录鉴权、产地认证、经营看板、异常预警与品类维护（UC-11～UC-15）。</p>
         <a class="btn btn-sm btn-ghost" href="/console">运营控制台</a>
       </div>
     </div>
@@ -110,5 +131,5 @@
 {% endblock %}
 
 {% block footer %}
-  <span>高级软件工程课程项目 · 溯源链域 / 交易域 / 用户与运营域</span>
+  <span>高级软件工程课程项目 · 溯源链域 / 品类域 / 交易域 / 用户与运营域</span>
 {% endblock %}

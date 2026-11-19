@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="笋干">
+  <title>笋干</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f4f2e4"/>
+      <stop offset="1" stop-color="#ddd7ba"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#8f7c3f" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="translate(-46 8) scale(1.0)" opacity="1.0"><path d="M0 -112 q42 42 28 108 q-12 56 -28 78 q-16 -22 -28 -78 q-14 -66 28 -108 z" fill="#b7a15c"/><path d="M0 -112 q-14 44 -10 108 q4 42 10 78 z" fill="#8f7c3f" opacity=".22"/><g stroke="#e6dcb6" stroke-width="5" opacity=".75"><path d="M-18 -58 q18 12 34 2"/><path d="M-16 -16 q16 12 30 2"/><path d="M-13 26 q14 12 26 2"/></g></g><g transform="translate(52 34) scale(0.72)" opacity="0.95"><path d="M0 -112 q42 42 28 108 q-12 56 -28 78 q-16 -22 -28 -78 q-14 -66 28 -108 z" fill="#b7a15c"/><path d="M0 -112 q-14 44 -10 108 q4 42 10 78 z" fill="#8f7c3f" opacity=".22"/><g stroke="#e6dcb6" stroke-width="5" opacity=".75"><path d="M-18 -58 q18 12 34 2"/><path d="M-16 -16 q16 12 30 2"/><path d="M-13 26 q14 12 26 2"/></g></g></g>
+</svg>

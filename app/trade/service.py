@@ -14,6 +14,8 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.catalog.models import Category
+from app.catalog.service import CategoryService
 from app.common.models import Farm, Role, User
 from app.core.config import settings
 from app.core.errors import Conflict, Forbidden, NotFound, RuleViolation
@@ -56,13 +58,61 @@ def _mask_phone(phone: str) -> str:
     return f"{phone[:3]}****{phone[-4:]}" if len(phone) >= 7 else phone
 
 
-def _product_out(product: Product) -> dict[str, Any]:
+def _clean_image(url: str | None) -> str:
+    """只接受本地静态路径或 http(s) 外链。
+
+    直接落库任意字符串会有两个坑：一是 `javascript:` 之类会被原样塞进 <img src>，
+    二是运营误填相对路径会 404。这里做一次白名单收敛，非法值降级为空，
+    前台自动回落到分类色块（不会出现裂图）。
+    """
+    value = (url or "").strip()
+    if value.startswith("/static/") or value.startswith("http://") or value.startswith("https://"):
+        return value[:200]
+    return ""
+
+
+def _normalize_tags(raw: str | None) -> str:
+    """标签统一成「逗号分隔、去空、去重、最多 6 个」，避免后台随便填导致展示错位。"""
+    if not raw:
+        return ""
+    seen: list[str] = []
+    for part in raw.replace("，", ",").replace("、", ",").split(","):
+        tag = part.strip()
+        if tag and tag not in seen:
+            seen.append(tag[:12])
+        if len(seen) >= 6:
+            break
+    return ",".join(seen)[:128]
+
+
+def _category_index(db: Session) -> dict[str, dict[str, str]]:
+    """一次查出全部分类，避免列表页逐条商品查分类（N+1）。"""
+    from app.catalog.models import Category
+
+    rows = db.execute(select(Category.category_id, Category.code, Category.name, Category.parent_id)).all()
+    names = {r.category_id: r.name for r in rows}
+    index: dict[str, dict[str, str]] = {}
+    for row in rows:
+        parent_name = names.get(row.parent_id or "", "")
+        index[row.category_id] = {
+            "code": row.code,
+            "name": row.name,
+            "path": f"{parent_name} / {row.name}" if parent_name else row.name,
+        }
+    return index
+
+
+def _product_out(product: Product, categories: dict[str, dict[str, str]] | None = None) -> dict[str, Any]:
+    category = (categories or {}).get(product.category_id or "")
     return {
         "product_id": product.product_id,
         "batch_id": product.batch_id,
         "farm_id": product.farm_id,
         "name": product.name,
-        "category": product.category,
+        "category": category["name"] if category else product.category,
+        "category_id": product.category_id,
+        "category_code": category["code"] if category else "",
+        "category_path": category["path"] if category else product.category,
         "price_cents": product.price_cents,
         "price": product.price_yuan,
         "stock": product.stock,
@@ -72,6 +122,14 @@ def _product_out(product: Product) -> dict[str, Any]:
         "certified": product.certified,
         "description": product.description,
         "sales_count": product.sales_count,
+        "spec": product.spec,
+        "grade": product.grade,
+        "origin": product.origin,
+        "shelf_life": product.shelf_life,
+        "storage": product.storage,
+        "image_url": product.image_url,
+        "tags": product.tag_list,
+        "is_recommended": bool(product.is_recommended),
         "created_at": product.created_at,
     }
 
@@ -149,6 +207,19 @@ class ProductService:
         return batch
 
     @staticmethod
+    def _resolve_category(db: Session, category_id: str | None, fallback: str) -> tuple[str | None, str]:
+        """把前端传来的分类主键换成「主键 + 分类名」一起落库。
+
+        商品表同时存 category_id 与 category 名，是有意为之的冗余：
+        列表页、订单快照、导出报表都直接读名字，不必每次都 join 分类表；
+        代价是改名时要同步，所以只在 ProductService 这一处写，不散落在路由里。
+        """
+        category = CategoryService.ensure_visible(db, category_id)
+        if category is None:
+            return None, fallback.strip() or "其他"
+        return category.category_id, category.name
+
+    @staticmethod
     def create(db: Session, user: User, payload: ProductCreate) -> dict[str, Any]:
         batch = ProductService._assert_sellable_batch(db, payload.batch_id)
         farm = db.get(Farm, batch.farm_id)
@@ -157,11 +228,15 @@ class ProductService:
         if user.role == Role.FARMER and (farm is None or farm.owner_id != user.user_id):
             raise Forbidden("只能上架本农场的批次商品")
 
+        category_id, category_name = ProductService._resolve_category(
+            db, payload.category_id, payload.category
+        )
         product = Product(
             batch_id=batch.batch_id,
             farm_id=batch.farm_id,
             name=payload.name.strip(),
-            category=payload.category.strip() or "其他",
+            category=category_name,
+            category_id=category_id,
             price_cents=_to_cents(payload.price_yuan),
             stock=payload.stock,
             unit=payload.unit,
@@ -169,11 +244,19 @@ class ProductService:
             status=ProductStatus.ON_SALE,
             # 批次所属农场已认证则在架即带认证标识（UC-12 步骤 7 的联动结果）
             certified=1 if farm is not None and farm.cert_status == "approved" else 0,
+            spec=payload.spec.strip(),
+            grade=payload.grade.strip(),
+            origin=payload.origin.strip(),
+            shelf_life=payload.shelf_life.strip(),
+            storage=payload.storage.strip(),
+            image_url=_clean_image(payload.image_url),
+            tags=_normalize_tags(payload.tags),
+            is_recommended=1 if payload.is_recommended else 0,
         )
         db.add(product)
         db.commit()
         db.refresh(product)
-        return _product_out(product)
+        return _product_out(product, _category_index(db))
 
     @staticmethod
     def update(db: Session, user: User, product_id: str, payload: ProductUpdate) -> dict[str, Any]:
@@ -184,19 +267,64 @@ class ProductService:
             farm = db.get(Farm, product.farm_id)
             if farm is None or farm.owner_id != user.user_id:
                 raise Forbidden("只能修改本农场的商品")
+        elif user.role not in (Role.OPERATOR,):
+            raise Forbidden("该操作需要农户或平台运营角色")
 
         data = payload.model_dump(exclude_unset=True)
+
+        # 分类换绑要同时改名字，否则列表页会显示旧分类
+        if "category_id" in data:
+            category_id, category_name = ProductService._resolve_category(
+                db, data.pop("category_id"), data.pop("category", "") or product.category
+            )
+            product.category_id = category_id
+            product.category = category_name
+        elif data.get("category") is not None:
+            product.category = str(data.pop("category")).strip() or product.category
+
         # 改价与改库存是高风险操作，单独留痕（报告表 3-6 安全要求）
-        if "price_yuan" in data and data["price_yuan"] is not None:
+        if data.get("price_yuan") is not None:
             product.price_cents = _to_cents(data.pop("price_yuan"))
-        if "stock" in data and data["stock"] is not None:
-            product.stock = data.pop("stock")
-        for key, value in data.items():
-            if value is not None:
-                setattr(product, key, value)
+        else:
+            data.pop("price_yuan", None)
+        if data.get("stock") is not None:
+            product.stock = int(data.pop("stock"))
+        else:
+            data.pop("stock", None)
+
+        if "is_recommended" in data and data["is_recommended"] is not None:
+            product.is_recommended = 1 if data.pop("is_recommended") else 0
+        if "image_url" in data:
+            product.image_url = _clean_image(data.pop("image_url"))
+        if "tags" in data:
+            product.tags = _normalize_tags(data.pop("tags"))
+
+        text_fields = (
+            "name",
+            "unit",
+            "description",
+            "status",
+            "spec",
+            "grade",
+            "origin",
+            "shelf_life",
+            "storage",
+        )
+        for key in text_fields:
+            if key in data and data[key] is not None:
+                value = data.pop(key)
+                setattr(product, key, value.strip() if isinstance(value, str) else value)
+
         db.commit()
         db.refresh(product)
-        return _product_out(product)
+        return _product_out(product, _category_index(db))
+
+    @staticmethod
+    def set_status(db: Session, user: User, product_id: str, status: str) -> dict[str, Any]:
+        """上下架：单独开一个动作，是因为它在后台是高频操作，不该走整表单提交。"""
+        if status not in ProductStatus.ALL:
+            raise RuleViolation("商品状态只能是 on_sale 或 off_shelf")
+        return ProductService.update(db, user, product_id, ProductUpdate(status=status))
 
     @staticmethod
     def list_products(
@@ -206,30 +334,74 @@ class ProductService:
         category: str | None = None,
         price_min: float | None = None,
         price_max: float | None = None,
+        origin: str | None = None,
         certified_only: bool = False,
+        in_stock_only: bool = False,
+        recommended_only: bool = False,
         include_off_shelf: bool = False,
         sort: str = "new",
         page_no: int = 1,
         size: int = 20,
         farm_id: str | None = None,
+        farm_ids: list[str] | None = None,
     ) -> dict[str, Any]:
-        """UC-07 检索与筛选：关键词 + 类目 + 价格区间 + 认证标识，支持排序分页。"""
+        """UC-07 检索与筛选：关键词 + 分类树 + 价格区间 + 产地 + 认证 + 有货，支持排序分页。
+
+        `category` 既接受品类域的 code（fruit / fruit-citrus），也接受分类名，
+        后者是为了兼容早期只存分类文本、没有 category_id 的商品数据。
+        """
         conds = []
         if not include_off_shelf:
             conds.append(Product.status == ProductStatus.ON_SALE)
-        if keyword:
+        if keyword and keyword.strip():
             like = f"%{keyword.strip()}%"
-            conds.append(or_(Product.name.like(like), Product.description.like(like)))
+            conds.append(
+                or_(
+                    Product.name.like(like),
+                    Product.description.like(like),
+                    Product.tags.like(like),
+                    Product.origin.like(like),
+                )
+            )
         if category:
-            conds.append(Product.category == category)
+            category_ids, category_names = CategoryService.resolve_filter(db, category)
+            if category_ids:
+                conds.append(
+                    or_(
+                        Product.category_id.in_(category_ids),
+                        # 冗余快照名也参与匹配，兜住尚未回填 category_id 的老数据
+                        Product.category.in_(category_names),
+                    )
+                )
+            elif category_names:
+                conds.append(Product.category == category_names[0])
         if price_min is not None:
             conds.append(Product.price_cents >= _to_cents(price_min))
         if price_max is not None:
             conds.append(Product.price_cents <= _to_cents(price_max))
+        if origin and origin.strip():
+            like = f"%{origin.strip()}%"
+            conds.append(
+                or_(
+                    Product.origin.like(like),
+                    Product.farm_id.in_(
+                        select(Farm.farm_id).where(
+                            or_(Farm.province.like(like), Farm.city.like(like), Farm.farm_name.like(like))
+                        )
+                    ),
+                )
+            )
         if certified_only:
             conds.append(Product.certified == 1)
+        if in_stock_only:
+            conds.append(Product.stock > 0)
+        if recommended_only:
+            conds.append(Product.is_recommended == 1)
         if farm_id:
             conds.append(Product.farm_id == farm_id)
+        if farm_ids is not None:
+            # 农户可能拥有多个产地（合作社），后台商品维护要一并看到
+            conds.append(Product.farm_id.in_(farm_ids or ["__none__"]))
 
         where = and_(*conds) if conds else None
         count_stmt = select(func.count()).select_from(Product)
@@ -241,6 +413,7 @@ class ProductService:
             "price_asc": Product.price_cents.asc(),
             "price_desc": Product.price_cents.desc(),
             "sales": Product.sales_count.desc(),
+            "stock": Product.stock.desc(),
             "new": Product.created_at.desc(),
         }.get(sort, Product.created_at.desc())
 
@@ -250,9 +423,10 @@ class ProductService:
         if where is not None:
             stmt = stmt.where(where)
         rows = db.scalars(stmt.order_by(order_by).offset((page_no - 1) * size).limit(size)).all()
+        categories = _category_index(db)
 
         return {
-            "items": [_product_out(p) for p in rows],
+            "items": [_product_out(p, categories) for p in rows],
             "total": total,
             "page": page_no,
             "size": size,
@@ -260,18 +434,25 @@ class ProductService:
 
     @staticmethod
     def detail(db: Session, product_id: str) -> dict[str, Any]:
-        """商品详情：把溯源侧信息（农场、批次、可扫码值）一并带上，供详情页展示。"""
+        """商品详情：把溯源侧信息（农场、批次、可扫码值）与同类推荐一并带上。"""
         product = db.get(Product, product_id)
         if product is None:
             raise NotFound("商品不存在")
-        data = _product_out(product)
+        categories = _category_index(db)
+        data = _product_out(product, categories)
 
         farm = db.get(Farm, product.farm_id)
         batch = db.get(Batch, product.batch_id)
         data["farm_name"] = farm.farm_name if farm else ""
         data["farm_province"] = farm.province if farm else ""
         data["farm_city"] = farm.city if farm else ""
+        data["farm_address"] = (
+            f"{farm.province}{farm.city}{farm.address}" if farm else ""
+        )
         data["cert_status"] = farm.cert_status if farm else "pending"
+        # 商品级产地优先；没填就用农场所在地兜底，保证详情页「产地」一栏永远有值
+        if not data["origin"]:
+            data["origin"] = f"{farm.province}{farm.city}" if farm else ""
         data["batch_no"] = batch.batch_no if batch else ""
         data["crop_name"] = batch.crop_name if batch else ""
         data["batch_status"] = batch.status if batch else ""
@@ -302,12 +483,77 @@ class ProductService:
                 .limit(20)
             ).all()
         ]
+        data["rating"] = (
+            round(sum(r["rating"] for r in data["reviews"]) / len(data["reviews"]), 1)
+            if data["reviews"]
+            else 0.0
+        )
+
+        # 同类推荐：先按二级分类找，不够再按一级分类兜（单品分类下常常只有 1 件商品）
+        related: list[Product] = []
+        if product.category_id:
+            related = list(
+                db.scalars(
+                    select(Product)
+                    .where(
+                        Product.category_id == product.category_id,
+                        Product.product_id != product.product_id,
+                        Product.status == ProductStatus.ON_SALE,
+                    )
+                    .order_by(Product.sales_count.desc())
+                    .limit(4)
+                ).all()
+            )
+            if len(related) < 4:
+                category = db.get(Category, product.category_id)
+                if category is not None and category.parent_id is None:
+                    sibling_ids = [c.category_id for c in category.children]
+                elif category is not None:
+                    sibling_ids = [category.parent_id] if category.parent_id else []
+                else:
+                    sibling_ids = []
+                if sibling_ids:
+                    more = db.scalars(
+                        select(Product)
+                        .where(
+                            Product.category_id.in_(sibling_ids),
+                            Product.product_id != product.product_id,
+                            Product.status == ProductStatus.ON_SALE,
+                        )
+                        .order_by(Product.sales_count.desc())
+                        .limit(4 - len(related))
+                    ).all()
+                    related.extend(more)
+        data["related"] = [_product_out(p, categories) for p in related]
         return data
 
     @staticmethod
     def categories(db: Session) -> list[str]:
+        """兼容旧接口：只返回出现过的分类名（新代码请用 /api/categories 的两级树）。"""
         rows = db.scalars(select(Product.category).distinct()).all()
         return sorted({r for r in rows if r})
+
+    @staticmethod
+    def stats(
+        db: Session, *, farm_id: str | None = None, farm_ids: list[str] | None = None
+    ) -> dict[str, int]:
+        """商品维护页的顶部指标：总量 / 在售 / 下架 / 未归类 / 推荐位。"""
+        base = select(func.count()).select_from(Product)
+        if farm_id:
+            base = base.where(Product.farm_id == farm_id)
+        if farm_ids is not None:
+            base = base.where(Product.farm_id.in_(farm_ids or ["__none__"]))
+        total = db.scalar(base) or 0
+        on_sale = db.scalar(base.where(Product.status == ProductStatus.ON_SALE)) or 0
+        recommended = db.scalar(base.where(Product.is_recommended == 1)) or 0
+        uncategorized = db.scalar(base.where(Product.category_id.is_(None))) or 0
+        return {
+            "total": total,
+            "on_sale": on_sale,
+            "off_shelf": total - on_sale,
+            "recommended": recommended,
+            "uncategorized": uncategorized,
+        }
 
 
 # ================================================================== 购物车

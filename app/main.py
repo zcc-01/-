@@ -18,11 +18,14 @@ from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.account.router import router as account_router
+from app.catalog.router import router as catalog_router
+from app.catalog.seed import ensure_catalog
+from app.catalog.service import CategoryService
 from app.core.config import settings
 from app.core.deps import get_session
 from app.core.errors import BizError, ErrorCode
 from app.core.response import fail, ok
-from app.db.base import init_db
+from app.db.base import SessionLocal, init_db
 from app.db.seed import seed_if_empty
 from app.ops.router import router as ops_router
 from app.trace.models import Stage
@@ -44,6 +47,20 @@ async def lifespan(_: FastAPI):
     try:
         if seed_if_empty():
             logger.info("已写入演示种子数据（farmer01 / operator01 / consumer01，口令 Passw0rd!）")
+        # 品类与商品数据是「缺什么补什么」，老库升级后也会自动补齐水果、蔬菜等品类
+        session = SessionLocal()
+        try:
+            stats = ensure_catalog(session)
+        finally:
+            session.close()
+        if any(stats.values()):
+            logger.info(
+                "品类数据已补齐：分类 +%s、商品 +%s、产地 +%s、批次 +%s",
+                stats["categories"],
+                stats["products"],
+                stats["farms"],
+                stats["batches"],
+            )
     except Exception as exc:  # 种子失败不应阻断启动
         logger.warning("种子数据写入失败：%s", exc)
     yield
@@ -87,6 +104,7 @@ app.mount("/static", StaticFiles(directory=str(WEB_DIR / "static")), name="stati
 # 路由挂载顺序即 OpenAPI 文档中的分组顺序：公共 → 溯源 → 交易 → 运营
 app.include_router(account_router)
 app.include_router(trace_router)
+app.include_router(catalog_router)
 app.include_router(trade_router)
 app.include_router(ops_router)
 # 页面路由（服务端渲染），与 /api 同进程、同 service 层
@@ -130,9 +148,10 @@ def health() -> dict:
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def index(request: Request, db: Session = Depends(get_session)):
-    """统一入口：首页承担「推荐 + 导航」，商品取自交易域，链路环节取自溯源域。"""
+    """统一入口：首页承担「推荐 + 分类导航」，商品取自交易域，分类取自品类域。"""
     from app.trade.service import ProductService
 
+    recommended = ProductService.list_products(db, recommended_only=True, sort="sales", size=8)
     latest = ProductService.list_products(db, sort="new", size=8)
     certified = ProductService.list_products(db, sort="sales", certified_only=True, size=4)
     return render(
@@ -140,9 +159,10 @@ def index(request: Request, db: Session = Depends(get_session)):
         "index.html",
         {
             "stage_labels": Stage.LABELS,
-            "featured": latest["items"],
+            # 有推荐位就展示推荐位，否则退回最新上架，首页永远不空
+            "featured": recommended["items"] or latest["items"],
             "certified": certified["items"],
-            "categories": ProductService.categories(db),
+            "catalog": [c for c in CategoryService.tree(db) if c["product_count"]],
             "product_total": latest["total"],
         },
     )

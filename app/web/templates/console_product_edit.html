@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}编辑商品 · {{ p.name }}{% endblock %}
+{% block subtitle %}商品维护{% endblock %}
+{% block body_class %}wide{% endblock %}
+
+{% block content %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+
+  <div class="admin">
+    <aside class="admin-side">
+      <div class="who">{{ p.name }}<br /><span>{{ p.batch_no or '无批次' }}</span></div>
+      <a href="/console">经营看板</a>
+      <a href="/console/catalog" class="active">品类与商品</a>
+      <a href="/shop/{{ p.product_id }}">前台详情</a>
+    </aside>
+
+    <div class="admin-main">
+      <section class="card">
+        <div class="section-head">
+          <h2>编辑商品信息</h2>
+          <a class="more" href="/console/catalog">← 返回列表</a>
+        </div>
+
+        <form method="post" action="/console/products/{{ p.product_id }}/update" class="edit-form">
+          <div class="form-grid">
+            <div class="form-row" style="grid-column:1 / -1;">
+              <label for="name">商品名称</label>
+              <input id="name" name="name" value="{{ p.name }}" maxlength="64" required />
+            </div>
+
+            <div class="form-row">
+              <label for="category_id">所属分类</label>
+              <select id="category_id" name="category_id">
+                {% for c in categories if c.enabled %}
+                <option value="{{ c.category_id }}" {% if p.category_id == c.category_id %}selected{% endif %}>
+                  {{ '　└ ' if c.level == 2 else '' }}{{ c.name }}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="status">上架状态</label>
+              <select id="status" name="status">
+                <option value="on_sale" {% if p.status == 'on_sale' %}selected{% endif %}>在售</option>
+                <option value="off_shelf" {% if p.status != 'on_sale' %}selected{% endif %}>已下架</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <label for="price_yuan">单价（元）</label>
+              <input id="price_yuan" name="price_yuan" value="{{ '%.2f'|format(p.price) }}" inputmode="decimal" required />
+            </div>
+
+            <div class="form-row">
+              <label for="stock">库存</label>
+              <input id="stock" name="stock" value="{{ p.stock }}" inputmode="numeric" required />
+            </div>
+
+            <div class="form-row">
+              <label for="unit">计价单位</label>
+              <input id="unit" name="unit" value="{{ p.unit }}" maxlength="16" />
+            </div>
+
+            <div class="form-row">
+              <label for="spec">规格</label>
+              <input id="spec" name="spec" value="{{ p.spec }}" placeholder="如 5kg/箱" maxlength="32" />
+            </div>
+
+            <div class="form-row">
+              <label for="grade">等级</label>
+              <input id="grade" name="grade" value="{{ p.grade }}" placeholder="如 一级果" maxlength="16" />
+            </div>
+
+            <div class="form-row">
+              <label for="origin">产地</label>
+              <input id="origin" name="origin" value="{{ p.origin }}" placeholder="如 江西省赣州市信丰县" maxlength="64" />
+            </div>
+
+            <div class="form-row">
+              <label for="shelf_life">保质期</label>
+              <input id="shelf_life" name="shelf_life" value="{{ p.shelf_life }}" placeholder="如 冷藏 30 天" maxlength="32" />
+            </div>
+
+            <div class="form-row">
+              <label for="storage">储存方式</label>
+              <input id="storage" name="storage" value="{{ p.storage }}" placeholder="如 0~4℃ 冷藏" maxlength="64" />
+            </div>
+
+            <div class="form-row" style="grid-column:1 / -1;">
+              <label for="tags">标签（逗号分隔，最多 6 个）</label>
+              <input id="tags" name="tags" value="{{ p.tags|join(',') }}" placeholder="当季,冷链直发,可溯源" maxlength="128" />
+            </div>
+
+            <div class="form-row" style="grid-column:1 / -1;">
+              <label for="image_url">商品配图</label>
+              <input id="image_url" name="image_url" value="{{ p.image_url }}" placeholder="/static/img/products/xxx.svg 或 https://" maxlength="200"
+                     oninput="var v=this.value.trim();document.getElementById('preview').src=v || '/static/img/products/other.svg';" />
+              <div class="img-picker">
+                {% for slug in ['navel-orange','fuji-apple','shine-muscat','strawberry','mango','kiwi','tomato','bok-choy','chinese-yam','wuchang-rice','millet','free-range-eggs','shiitake','walnut','bamboo-shoot','green-tea','black-tea'] %}
+                <img src="/static/img/products/{{ slug }}.svg" alt="{{ slug }}" title="使用{{ slug }}"
+                     onclick="document.getElementById('image_url').value='/static/img/products/{{ slug }}.svg';document.getElementById('preview').src=this.src;" />
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="form-row" style="grid-column:1 / -1;">
+              <label for="description">商品详情</label>
+              <textarea id="description" name="description" rows="4" maxlength="2000">{{ p.description }}</textarea>
+            </div>
+
+            <div class="form-row" style="grid-column:1 / -1;">
+              <label class="check-line">
+                <input type="checkbox" name="is_recommended" value="1" {% if p.is_recommended %}checked{% endif %} />
+                放入首页推荐位
+              </label>
+            </div>
+          </div>
+
+          <div class="edit-actions">
+            <button class="btn" type="submit">保存修改</button>
+            <a class="btn btn-ghost" href="/console/catalog">取消</a>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="section-head"><h2>配图预览与溯源信息</h2></div>
+        <div class="edit-preview">
+          <img id="preview" class="cover cover-lg" src="{{ p.image_url or '/static/img/products/other.svg' }}" alt="{{ p.name }}" />
+          <table class="attr-table">
+            <tr><th>溯源批次</th><td><code>{{ p.batch_no or '—' }}</code> · 环节 {{ p.event_count }} 条</td></tr>
+            <tr><th>农场</th><td>{{ p.farm_name }}（{{ p.cert_status }}）</td></tr>
+            <tr><th>批次状态</th><td>{{ p.batch_status or '—' }}</td></tr>
+            <tr><th>种植 / 采收</th><td>{{ p.plant_date or '—' }} / {{ p.harvest_date or '—' }}</td></tr>
+            <tr><th>溯源示例码</th><td>{{ p.trace_code or '未赋码' }}</td></tr>
+          </table>
+        </div>
+        <p class="note">价格与库存也可以在列表页行内直接改；修改后会立即反映到前台商品页与下单校验。</p>
+      </section>
+    </div>
+  </div>
+{% endblock %}

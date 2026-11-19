@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="脐橙">
+  <title>脐橙</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#fff6e8"/>
+      <stop offset="1" stop-color="#ffe0b8"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#d9740f" opacity=".14"/>
+  <g transform="translate(300 250)"><circle cx="0" cy="0" r="104" fill="#f79021"/>
+<circle cx="-34" cy="-34" r="30" fill="#ffffff" opacity=".18"/>
+<path d="M6 -104 q10 -26 34 -32 q-2 26 -16 38 z" fill="#4f8f45"/>
+<path d="M2 -100 q-6 -30 14 -46 q10 20 4 42 z" fill="#4f8f45" opacity=".85"/>
+<circle cx="6" cy="-98" r="7" fill="#d9740f"/>
+<path d="M-98 6 a98 98 0 0 0 196 0" fill="none" stroke="#d9740f" stroke-opacity=".18" stroke-width="6"/></g>
+</svg>

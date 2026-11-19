@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="干香菇">
+  <title>干香菇</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f5f0e7"/>
+      <stop offset="1" stop-color="#e0d3bf"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#664931" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="translate(-38 18) scale(.86)">
+  <path d="M-84 0 q6 -74 84 -74 q78 0 84 74 q-84 18 -168 0 z" fill="#8b6647"/>
+  <path d="M-84 0 q6 -74 84 -74 v74 q-42 12 -84 0 z" fill="#ffffff" opacity=".12"/>
+  <path d="M-16 0 h32 l10 78 q-26 12 -52 0 z" fill="#c8a887"/>
+  <g fill="#c8a887" opacity=".55"><circle cx="-40" cy="-34" r="7"/><circle cx="10" cy="-48" r="6"/><circle cx="44" cy="-26" r="5"/></g>
+</g>
+<g transform="translate(64 -4) scale(.6)">
+  <path d="M-84 0 q6 -74 84 -74 q78 0 84 74 q-84 18 -168 0 z" fill="#8b6647"/>
+  <path d="M-16 0 h32 l10 78 q-26 12 -52 0 z" fill="#c8a887"/>
+</g></g>
+</svg>

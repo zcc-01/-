@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="散养土鸡蛋">
+  <title>散养土鸡蛋</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#fcf3e5"/>
+      <stop offset="1" stop-color="#f0ddc0"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#dcc7a4" opacity=".14"/>
+  <g transform="translate(300 250)"><path d="M-118 62 q118 -40 236 0 l-16 48 q-102 20 -204 0 z" fill="#b58e5e"/>
+<path d="M-118 62 q118 -40 236 0 l-16 48 q-102 20 -204 0 z" fill="none" stroke="#dcc7a4" stroke-width="3" opacity=".35"/>
+<path d="M-110 68 q110 -32 220 0" stroke="#dcc7a4" stroke-width="6" fill="none" opacity=".35"/>
+<ellipse cx="-46" cy="6" rx="44" ry="56" fill="#f7ead1" stroke="#dcc7a4" stroke-width="2.5" stroke-opacity=".3"/><ellipse cx="-58" cy="-10" rx="13" ry="17" fill="#ffffff" opacity=".7"/><ellipse cx="0" cy="-18" rx="46" ry="59" fill="#f7ead1" stroke="#dcc7a4" stroke-width="2.5" stroke-opacity=".3"/><ellipse cx="-13" cy="-35" rx="14" ry="18" fill="#ffffff" opacity=".7"/><ellipse cx="48" cy="4" rx="43" ry="55" fill="#f7ead1" stroke="#dcc7a4" stroke-width="2.5" stroke-opacity=".3"/><ellipse cx="36" cy="-12" rx="13" ry="17" fill="#ffffff" opacity=".7"/>
+<g stroke="#dcc7a4" stroke-width="4" opacity=".3" fill="none">
+  <path d="M-88 30 q18 26 4 46"/><path d="M-26 40 q16 26 2 42"/><path d="M62 32 q18 26 4 44"/>
+</g></g>
+</svg>

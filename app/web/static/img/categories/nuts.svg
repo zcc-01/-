@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="山核桃">
+  <title>山核桃</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f7f0e4"/>
+      <stop offset="1" stop-color="#e4d3b8"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#82592f" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="translate(-46 4)">
+  <circle cx="0" cy="0" r="76" fill="#e3c9a2"/>
+  <path d="M0 -76 a76 76 0 0 1 0 152 a38 76 0 0 1 0 -152 z" fill="#a97845"/>
+  <path d="M0 -70 v140 M-30 -60 q26 34 0 62 q-26 28 0 56" stroke="#82592f" stroke-width="5" fill="none" opacity=".45"/>
+</g>
+<g transform="translate(58 18) rotate(18)">
+  <circle cx="0" cy="0" r="66" fill="#a97845"/>
+  <path d="M-46 -22 q46 -26 92 0 q-12 44 -46 48 q-34 -4 -46 -48 z" fill="#e6cda6"/>
+  <path d="M-30 -14 q30 -14 60 0" stroke="#82592f" stroke-width="4" fill="none" opacity=".4"/>
+</g></g>
+</svg>

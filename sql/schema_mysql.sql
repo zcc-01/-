@@ -130,3 +130,63 @@ GRANT SELECT, INSERT, UPDATE ON agritrace.sys_user  TO 'trace_app'@'%';
 -- 作废溯源码时临时授权（或改为写入独立作废表，见 docs/数据库设计.md 的演进说明）
 GRANT UPDATE (status, revoked_at, revoked_reason, updated_at) ON agritrace.trace_code TO 'trace_app'@'%';
 FLUSH PRIVILEGES;
+
+-- =============================================================================
+-- 品类域与商品表（「完善农产品模块」新增，对应报告 UC-06/UC-07 的目录部分）
+-- 说明：开发环境由 app/db/migrate.py 自动补列，本段供生产库手工建表与评审展示。
+-- 约定：分类只有两级；商品同时保存 category_id（外键）与 category（名称快照），
+--       名称快照让列表页/订单快照不必每次 join 分类表。
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS product_category (
+  category_id  VARCHAR(32)  NOT NULL COMMENT '分类标识',
+  code         VARCHAR(32)  NOT NULL COMMENT '稳定对外编码，如 fruit-citrus',
+  name         VARCHAR(32)  NOT NULL COMMENT '分类名称',
+  parent_id    VARCHAR(32)  DEFAULT NULL COMMENT '上级分类，NULL 表示一级分类',
+  level        TINYINT      NOT NULL DEFAULT 1 COMMENT '层级：1 大类 / 2 子类',
+  icon         VARCHAR(8)   NOT NULL DEFAULT '' COMMENT '展示图标（emoji）',
+  image        VARCHAR(200) NOT NULL DEFAULT '' COMMENT '分类配图',
+  sort_no      INT          NOT NULL DEFAULT 0 COMMENT '同级排序，小的在前',
+  enabled      TINYINT      NOT NULL DEFAULT 1 COMMENT '1 启用 / 0 停用（停用父类级联停用子类）',
+  description  VARCHAR(200) NOT NULL DEFAULT '' COMMENT '分类说明',
+  created_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (category_id),
+  UNIQUE KEY uq_category_code (code),
+  UNIQUE KEY uq_category_name_per_parent (parent_id, name),
+  KEY idx_category_parent (parent_id),
+  KEY idx_category_enabled (enabled)
+) ENGINE=InnoDB COMMENT='商品分类（两级目录）';
+
+CREATE TABLE IF NOT EXISTS product (
+  product_id     VARCHAR(32)  NOT NULL COMMENT '商品标识',
+  batch_id       VARCHAR(32)  NOT NULL COMMENT '关联溯源批次（上架即挂链）',
+  farm_id        VARCHAR(32)  NOT NULL COMMENT '所属产地',
+  name           VARCHAR(64)  NOT NULL COMMENT '商品名称',
+  category       VARCHAR(32)  NOT NULL DEFAULT '其他' COMMENT '分类名称快照',
+  category_id    VARCHAR(32)  DEFAULT NULL COMMENT '分类外键（product_category）',
+  price_cents    INT          NOT NULL COMMENT '单价，单位分',
+  stock          INT          NOT NULL DEFAULT 0 COMMENT '库存',
+  unit           VARCHAR(16)  NOT NULL DEFAULT '份' COMMENT '计价单位',
+  status         VARCHAR(16)  NOT NULL DEFAULT 'on_sale' COMMENT 'on_sale/off_shelf',
+  certified      TINYINT      NOT NULL DEFAULT 0 COMMENT '产地认证标识（运营域回写）',
+  description    TEXT         NOT NULL COMMENT '商品详情',
+  sales_count    INT          NOT NULL DEFAULT 0 COMMENT '销量',
+  spec           VARCHAR(32)  NOT NULL DEFAULT '' COMMENT '规格，如 5kg/箱',
+  grade          VARCHAR(16)  NOT NULL DEFAULT '' COMMENT '等级，如 一级果',
+  origin         VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '产地文本，如 江西省赣州市信丰县',
+  shelf_life     VARCHAR(32)  NOT NULL DEFAULT '' COMMENT '保质期',
+  storage        VARCHAR(64)  NOT NULL DEFAULT '' COMMENT '储存方式',
+  image_url      VARCHAR(200) NOT NULL DEFAULT '' COMMENT '商品配图（本地静态或外链）',
+  tags           VARCHAR(128) NOT NULL DEFAULT '' COMMENT '逗号分隔标签，参与关键词检索',
+  is_recommended TINYINT      NOT NULL DEFAULT 0 COMMENT '首页推荐位',
+  created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (product_id),
+  KEY idx_product_batch (batch_id),
+  KEY idx_product_farm (farm_id),
+  KEY idx_product_category_id (category_id),
+  KEY idx_product_status (status),
+  KEY idx_product_name (name),
+  KEY idx_product_recommended (is_recommended)
+) ENGINE=InnoDB COMMENT='商品（必须挂在已采收批次上）';

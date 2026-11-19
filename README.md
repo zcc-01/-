@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3774AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00)
-![Tests](https://img.shields.io/badge/tests-85%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-102%20passed-brightgreen)
 
 ## 项目简介
 
@@ -24,6 +24,7 @@
 | 溯源链域 + 平台公共基础 | UC-01～UC-05 | `feat/trace-chain` | ✅ 完成（44 个用例） |
 | 交易域 | UC-06～UC-10 | `feat/trade` → 已并入 `feat/integrate` | ✅ 完成（18 个用例） |
 | 用户与运营域 | UC-11～UC-15 | `feat/identity-ops` → 已并入 `feat/integrate` | ✅ 完成（17 个用例） |
+| 品类域（商品目录） | UC-06/UC-07 的目录部分 | `feat/integrate` | ✅ 完成（17 个用例） |
 
 > 说明：整合开始时两个分支仅含 README，因此交易域与运营域在 `feat/integrate` 上按报告用例规约补齐；
 > 之后组员推送了各自的真实实现（`feat/trade` 93 文件、`feat/identity-ops` 63 文件且历史被强推），
@@ -46,6 +47,8 @@
 | 支付幂等 | 应用层先查成功流水 + 部分唯一索引兜底，重复点击不产生第二条（BR-04） |
 | 跨域预警 | 断链扫码、环节时间倒挂自动开预警单，`dedup_key` 保证不刷屏 |
 | 扫码日志 | 匿名可扫码，日志写入失败降级不阻断查询（UC-04 异常流程 6a） |
+| 品类目录 | 两级分类树（水果/蔬菜/粮油/茶叶/坚果/干货/禽蛋），父类筛选自动覆盖子类，停用父类级联停用子类 |
+| 商品信息 | 规格、等级、产地、保质期、储存、标签、配图结构化落库，列表/详情/后台共用同一份数据 |
 | 一键复现 | devcontainer + `scripts/bootstrap.sh`，克隆后一条命令启动 |
 
 ## 分层架构
@@ -88,7 +91,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
 python scripts/seed.py        # 建表 + 种子数据（幂等，可重复执行）
 python -m uvicorn app.main:app --reload
-pytest -q                     # 44 个测试
+pytest -q                     # 102 个测试
 ```
 
 ```bat
@@ -141,14 +144,25 @@ python -m uvicorn app.main:app --reload
 | GET | `/api/batches/{id}/scans` | 运营/监管 | 扫码日志 |
 | GET | `/api/health` | 公开 | 健康检查 |
 
+品类域（商品目录）：
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| GET | `/api/categories` | 公开 | 两级分类树（`flat=true` 返回扁平列表） |
+| GET | `/api/categories/{id}` | 公开 | 分类详情 |
+| POST | `/api/categories` | 运营 | 新建分类（编码唯一、最多两级） |
+| PATCH | `/api/categories/{id}` | 运营 | 改名/换上级/排序/启停 |
+| POST | `/api/categories/{id}/toggle` | 运营 | 启停（停用父类级联停用子类） |
+| DELETE | `/api/categories/{id}` | 运营 | 删除（有子类或商品时拒绝） |
+
 交易域（UC-06～UC-10）：
 
 | 方法 | 路径 | 权限 | 说明 |
 |---|---|---|---|
 | POST | `/api/products` | 农户/运营 | 商品上架（校验批次已采收） |
 | PATCH | `/api/products/{id}` | 农户/运营 | 改价/改库存/上下架 |
-| GET | `/api/products` | 公开 | 检索筛选（关键词/类目/价格/认证/排序） |
-| GET | `/api/products/{id}` | 公开 | 商品详情（含溯源与评价） |
+| GET | `/api/products` | 公开 | 检索筛选（关键词/分类 code/价格/产地/认证/有货/推荐/排序/分页） |
+| GET | `/api/products/{id}` | 公开 | 商品详情（规格参数 + 溯源信息 + 同类推荐 + 评价） |
 | GET | `/api/cart` · POST · PATCH · DELETE | 登录 | 购物车增删改查 |
 | POST | `/api/orders` | 登录 | 下单（服务端重算金额 + 原子扣库存） |
 | GET | `/api/orders` · `/api/orders/{id}` | 登录 | 订单列表/详情 |
@@ -176,8 +190,10 @@ python -m uvicorn app.main:app --reload
 
 | 路径 | 说明 |
 |---|---|
-| `/` | 首页：横幅 + 商品推荐 + 分类 + 平台能力入口 |
-| `/shop` · `/shop/{id}` | 商品检索（搜索/分类页签/排序）与详情（属性表/立即购买/评价） |
+| `/` | 首页：横幅 + 品类导航 + 当季推荐 + 认证产地 + 平台能力入口 |
+| `/shop` · `/shop/{id}` | 商品检索（关键词/产地/价格区间/二级分类/排序）与详情（规格属性表/同类推荐/评价） |
+| `/console/catalog` | 品类与商品维护：分类增删改启停 + 商品行内改价改库存/上下架 |
+| `/console/products/{id}/edit` | 商品编辑：分类、规格、产地、保质期、配图、标签、推荐位 |
 | `/cart` · `/orders` | 购物车结算、订单列表与支付/取消/收货/评价 |
 | `/console` | 运营控制台：看板 + 商品管理 + 订单管理 + 认证审核 + 异常预警 |
 | `/trace/{code}` | 扫码落地页（时间轴 + 链校验 + 断链告警） |
@@ -218,6 +234,7 @@ python -m uvicorn app.main:app --reload
 │   ├── common/             # 跨域最小契约：User、Farm、Role
 │   ├── trace/              # 溯源链域：models/schemas/service/chain/router/二维码
 │   ├── account/            # 登录与鉴权（JWT 签发）
+│   ├── catalog/            # 品类域：分类树、商品目录维护、演示数据
 │   ├── trade/              # 交易域：商品/购物车/订单/支付/评价
 │   ├── ops/                # 用户与运营域：认证审核/看板/预警/监管
 │   ├── web/                # 页面路由、模板骨架与统一渲染上下文
@@ -233,15 +250,15 @@ python -m uvicorn app.main:app --reload
 │   ├── issues-清单.md      # 可直接粘贴到 GitHub 的任务清单
 │   └── 测试说明.md
 ├── sql/schema_mysql.sql    # 生产 DDL + 只追加权限示例
-├── scripts/                # bootstrap / seed / smoke
-└── tests/                  # 85 个用例：链路、并发、交易、运营、RBAC、页面
+├── scripts/                # bootstrap / seed / smoke / make_assets（配图生成）
+└── tests/                  # 102 个用例：链路、并发、交易、运营、品类、RBAC、页面
 ```
 
 ## 测试与质量
 
 ```bash
 ruff check .            # 静态检查
-pytest -q               # 85 passed
+pytest -q               # 102 passed
 bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 ```
 
@@ -252,6 +269,7 @@ bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 - 业务规则：重复建档 409、越权 403、状态机禁止回退、赋码幂等与上限、作废码 410；
 - 交易域：超卖拦截、支付幂等与重试上限、取消释放库存、评价前置条件、结批批次不可售；
 - 运营域：BR-07 单份在途、BR-08 结论不可改、报告过期驳回、看板口径、断链/倒挂自动预警、监管回溯留痕；
+- 品类：两级分类约束、同级重名拦截、停用级联、删除守卫、父类筛选覆盖子类、标签/产地检索、维护字段与配图白名单；
 - RBAC：16 个权限点的最小权限、权限点跨角色复用、越权消息可定位；
 - 页面：扫码页渲染、断链告警条、码不存在 404、控制台按角色收敛数据。
 
@@ -297,7 +315,7 @@ docs(trace): 补充 UC-01~UC-05 用例规格
 | `location` 参与摘要 | 未参与（对齐报告公式） | v1.1 纳入哈希口径并做数据迁移 |
 | 异步扫码日志 | 同会话尽力写入 | 换消息队列异步补写 |
 | 支付渠道 | 本地模拟网关（`payment_gateway.py` 抽象） | 接真实渠道只需新增实现 |
-| 商品图片 | CSS 色块占位 | 增加图片字段与上传接口 |
+| 商品图片 | 已落 `image_url` 字段，演示数据使用本地 SVG 插画 | 增加图片上传接口与对象存储，运营可直接传实拍图 |
 | 库存扣减 | 单库条件更新 | 分库场景引入库存服务/分布式锁 |
 | 认证材料 | 结构化字段 + JSON 材料 | 接入对象存储与在线核验 |
 

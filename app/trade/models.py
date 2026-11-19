@@ -86,7 +86,12 @@ class Product(Base, TimestampMixin):
         String(32), ForeignKey("farm.farm_id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    # category 是分类名的冗余快照，给列表页直接展示、也给早期只存文本的数据兜底；
+    # category_id 才是与品类域关联的真实外键（选分类时两者一起写，见 ProductService）
     category: Mapped[str] = mapped_column(String(32), nullable=False, default="其他")
+    category_id: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("product_category.category_id"), default=None, index=True
+    )
     price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
     stock: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     unit: Mapped[str] = mapped_column(String(16), nullable=False, default="份")
@@ -98,9 +103,27 @@ class Product(Base, TimestampMixin):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     sales_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    # ---- 商品信息展示所需的结构化字段（列表卡片、详情属性表、检索都用得到）----
+    spec: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    grade: Mapped[str] = mapped_column(String(16), nullable=False, default="")
+    # 产地写成「省 市 区县」的自由文本：同一农场的不同商品可能来自不同地块/合作点，
+    # 详情页优先展示它，为空时回落到 farm.province + farm.city
+    origin: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    shelf_life: Mapped[str] = mapped_column(String(32), nullable=False, default="")
+    storage: Mapped[str] = mapped_column(String(64), nullable=False, default="")
+    # 本地静态图（/static/img/...）或外链均可；为空时前台回落成分类色块
+    image_url: Mapped[str] = mapped_column(String(200), nullable=False, default="")
+    # 逗号分隔的短标签，如「当季,冷链直发,可生食」——检索关键词也会匹配它
+    tags: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    is_recommended: Mapped[int] = mapped_column(Integer, nullable=False, default=0, index=True)
+
     @property
     def price_yuan(self) -> float:
         return round(self.price_cents / 100, 2)
+
+    @property
+    def tag_list(self) -> list[str]:
+        return [t for t in (x.strip() for x in (self.tags or "").split(",")) if t]
 
 
 class CartItem(Base, TimestampMixin):

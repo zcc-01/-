@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="铁棍山药">
+  <title>铁棍山药</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f8f2e8"/>
+      <stop offset="1" stop-color="#e6d8c1"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#a4835a" opacity=".14"/>
+  <g transform="translate(300 250)"><g transform="rotate(-12 -46 10)"><rect x="-66" y="-104" width="40" height="208" rx="20" fill="#c9a87c"/><rect x="-66" y="-104" width="14" height="208" rx="10" fill="#ffffff" opacity=".22"/><g fill="#a4835a" opacity=".45"><circle cx="-52" cy="-74" r="3"/><circle cx="-44" cy="-48" r="3"/><circle cx="-36" cy="-22" r="3"/><circle cx="-52" cy="4" r="3"/><circle cx="-44" cy="30" r="3"/><circle cx="-36" cy="56" r="3"/></g></g><g transform="rotate(0 4 10)"><rect x="-16" y="-118" width="40" height="236" rx="20" fill="#c9a87c"/><rect x="-16" y="-118" width="14" height="236" rx="10" fill="#ffffff" opacity=".22"/><g fill="#a4835a" opacity=".45"><circle cx="-2" cy="-88" r="3"/><circle cx="6" cy="-62" r="3"/><circle cx="14" cy="-36" r="3"/><circle cx="-2" cy="-10" r="3"/><circle cx="6" cy="16" r="3"/><circle cx="14" cy="42" r="3"/></g></g><g transform="rotate(12 52 10)"><rect x="32" y="-100" width="40" height="200" rx="20" fill="#c9a87c"/><rect x="32" y="-100" width="14" height="200" rx="10" fill="#ffffff" opacity=".22"/><g fill="#a4835a" opacity=".45"><circle cx="46" cy="-70" r="3"/><circle cx="54" cy="-44" r="3"/><circle cx="62" cy="-18" r="3"/><circle cx="46" cy="8" r="3"/><circle cx="54" cy="34" r="3"/><circle cx="62" cy="60" r="3"/></g></g></g>
+</svg>

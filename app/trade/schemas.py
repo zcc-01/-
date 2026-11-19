@@ -18,20 +18,38 @@ class ProductCreate(BaseModel):
     batch_id: str = Field(..., max_length=32)
     name: str = Field(..., min_length=1, max_length=64)
     category: str = Field(default="其他", max_length=32)
+    category_id: str | None = Field(default=None, max_length=32, description="品类域的分类主键")
     price_yuan: float = Field(..., gt=0, le=1_000_000, description="单价，单位元，最多两位小数")
     stock: int = Field(..., ge=0, le=1_000_000)
     unit: str = Field(default="份", max_length=16)
     description: str = Field(default="", max_length=2000)
+    spec: str = Field(default="", max_length=32, description="规格，如 5kg/箱")
+    grade: str = Field(default="", max_length=16, description="等级，如 一级果")
+    origin: str = Field(default="", max_length=64, description="产地，如 江西省赣州市信丰县")
+    shelf_life: str = Field(default="", max_length=32, description="保质期，如 常温 7 天")
+    storage: str = Field(default="", max_length=64, description="储存方式，如 冷藏 0~4℃")
+    image_url: str = Field(default="", max_length=200)
+    tags: str = Field(default="", max_length=128, description="逗号分隔的标签")
+    is_recommended: bool = Field(default=False)
 
 
 class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=64)
     category: str | None = Field(default=None, max_length=32)
+    category_id: str | None = Field(default=None, max_length=32)
     price_yuan: float | None = Field(default=None, gt=0, le=1_000_000)
     stock: int | None = Field(default=None, ge=0, le=1_000_000)
     unit: str | None = Field(default=None, max_length=16)
     description: str | None = Field(default=None, max_length=2000)
     status: Literal["on_sale", "off_shelf"] | None = None
+    spec: str | None = Field(default=None, max_length=32)
+    grade: str | None = Field(default=None, max_length=16)
+    origin: str | None = Field(default=None, max_length=64)
+    shelf_life: str | None = Field(default=None, max_length=32)
+    storage: str | None = Field(default=None, max_length=64)
+    image_url: str | None = Field(default=None, max_length=200)
+    tags: str | None = Field(default=None, max_length=128)
+    is_recommended: bool | None = None
 
 
 class ProductOut(BaseModel):
@@ -42,6 +60,7 @@ class ProductOut(BaseModel):
     farm_id: str
     name: str
     category: str
+    category_id: str | None = None
     price_cents: int
     stock: int
     unit: str
@@ -49,6 +68,14 @@ class ProductOut(BaseModel):
     certified: int
     description: str
     sales_count: int
+    spec: str = ""
+    grade: str = ""
+    origin: str = ""
+    shelf_life: str = ""
+    storage: str = ""
+    image_url: str = ""
+    tags: str = ""
+    is_recommended: bool = False
     created_at: datetime
 
     @computed_field  # type: ignore[prop-decorator]
@@ -64,10 +91,13 @@ class ProductDetail(ProductOut):
     """
 
     farm_name: str = ""
+    farm_address: str = ""
     batch_no: str = ""
     crop_name: str = ""
     cert_status: str = "pending"
     trace_code: str | None = None
+    category_path: str = ""
+    rating: float = 0.0
     reviews: list[ReviewOut] = Field(default_factory=list)
 
 

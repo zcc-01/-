@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450" role="img" aria-label="徐香猕猴桃">
+  <title>徐香猕猴桃</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#f2f8e8"/>
+      <stop offset="1" stop-color="#dcecc2"/>
+    </linearGradient>
+    <radialGradient id="soft" cx="0.5" cy="0.4" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="450" fill="url(#bg)"/>
+  <circle cx="470" cy="96" r="132" fill="#ffffff" opacity=".22"/>
+  <circle cx="120" cy="360" r="96" fill="#ffffff" opacity=".16"/>
+  <path d="M0 352 Q150 316 300 348 T600 336 L600 450 L0 450 Z" fill="#ffffff" opacity=".42"/>
+  <ellipse cx="300" cy="332" rx="132" ry="20" fill="#657c28" opacity=".14"/>
+  <g transform="translate(300 250)"><circle cx="0" cy="0" r="106" fill="#8d6a3f"/>
+<circle cx="0" cy="0" r="96" fill="#8ca83e"/>
+<circle cx="0" cy="0" r="40" fill="#f5f2e6" opacity=".92"/>
+<ellipse cx="-34" cy="-8" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(80 -34 -8)"/><ellipse cx="-24" cy="-26" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(55 -24 -26)"/><ellipse cx="0" cy="-34" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(0 0 -34)"/><ellipse cx="24" cy="-26" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(-55 24 -26)"/><ellipse cx="34" cy="-8" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(-80 34 -8)"/><ellipse cx="26" cy="20" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(-110 26 20)"/><ellipse cx="0" cy="30" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(0 0 30)"/><ellipse cx="-26" cy="20" rx="3.4" ry="6" fill="#3f4a1c" transform="rotate(110 -26 20)"/>
+<circle cx="-40" cy="-40" r="26" fill="#ffffff" opacity=".18"/>
+<g opacity=".9"><circle cx="-58" cy="5" r="4" fill="#f4f1e4"/><circle cx="-46" cy="-40" r="4" fill="#f4f1e4"/><circle cx="0" cy="-56" r="4" fill="#f4f1e4"/><circle cx="46" cy="-40" r="4" fill="#f4f1e4"/><circle cx="58" cy="5" r="4" fill="#f4f1e4"/><circle cx="46" cy="40" r="4" fill="#f4f1e4"/><circle cx="0" cy="56" r="4" fill="#f4f1e4"/><circle cx="-46" cy="40" r="4" fill="#f4f1e4"/></g></g>
+</svg>
