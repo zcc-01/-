@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}监管回溯 · {{ app_name }}{% endblock %}
+{% block content %}
+<section class="panel">
+  <h2>按条件回溯批次链路（UC-15）</h2>
+  <p class="sub">监管人员按产地、批次号与采收日期筛选，可一键导出 CSV 留档。列表与导出同源，避免两处口径不一致。</p>
+  <div class="grid cols-2">
+    <div>
+      <label>产地 ID（可空）</label><input id="farm_id" placeholder="FRM..." />
+      <label>批次号（模糊匹配）</label><input id="batch_no" placeholder="PC-2026" />
+    </div>
+    <div>
+      <label>采收日期起</label><input id="date_from" type="date" />
+      <label>采收日期止</label><input id="date_to" type="date" />
+      <p style="margin-top:16px">
+        <button onclick="search()">查询</button>
+        <button class="ghost" onclick="exportCsv()">导出 CSV</button>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>回溯结果</h2>
+  <div id="result"><p class="empty">输入条件后查询</p></div>
+  <div id="detail"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (guard()) search();
+
+function query() {
+  const params = new URLSearchParams();
+  const farm = document.getElementById("farm_id").value.trim();
+  const batch = document.getElementById("batch_no").value.trim();
+  const from = document.getElementById("date_from").value;
+  const to = document.getElementById("date_to").value;
+  if (farm) params.set("farm_id", farm);
+  if (batch) params.set("batch_no", batch);
+  if (from) params.set("date_from", from);
+  if (to) params.set("date_to", to);
+  return params.toString();
+}
+
+async function search() {
+  const box = document.getElementById("result");
+  try {
+    const data = await api("/api/regulator/traceback?" + query());
+    if (!data.available) {
+      box.innerHTML = '<p class="empty">' + data.note + "</p>";
+      return;
+    }
+    if (!data.total) {
+      box.innerHTML = '<p class="empty">没有符合条件的批次</p>';
+      return;
+    }
+    const rows = data.items
+      .map((b) => {
+        const chain =
+          b.chain_ok === true
+            ? '<span class="tag">通过</span>'
+            : b.chain_ok === false
+            ? '<span class="tag critical">断链@' + b.broken_at + "</span>"
+            : '<span class="tag muted">无法判定</span>';
+        return (
+          "<tr><td class='mono'>" + b.batch_no + "</td><td>" + b.crop_name + "</td><td>" + (b.harvest_date || "-") +
+          "</td><td>" + b.status + "</td><td>" + b.event_count + "</td><td>" + chain +
+          "</td><td><button class='small ghost' onclick=\"detail('" + b.batch_id + "')\">链路明细</button></td></tr>"
+        );
+      })
+      .join("");
+    box.innerHTML =
+      "<table><thead><tr><th>批次号</th><th>品种</th><th>采收日期</th><th>状态</th><th>环节数</th><th>链校验</th><th>操作</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function detail(batchId) {
+  const box = document.getElementById("detail");
+  try {
+    const data = await api("/api/regulator/traceback/" + batchId);
+    if (!data.available) {
+      box.innerHTML = '<div class="panel"><p class="empty">' + data.note + "</p></div>";
+      return;
+    }
+    const rows = data.events
+      .map(
+        (e) =>
+          "<tr><td>" + e.seq_no + "</td><td>" + e.stage + "</td><td>" + (e.location || "-") + "</td><td>" +
+          e.occurred_at + "</td><td class='mono'>" + e.curr_hash_short + "</td></tr>"
+      )
+      .join("");
+    box.innerHTML =
+      '<div class="panel"><h2>批次 ' + batchId + " 的环节链路</h2>" +
+      '<p class="sub">链校验：' + (data.chain_ok === null ? "无法判定" : data.chain_ok ? "通过" : "断链于第 " + data.broken_at + " 条") + "</p>" +
+      "<table><thead><tr><th>序号</th><th>环节</th><th>地点</th><th>发生时间</th><th>摘要</th></tr></thead><tbody>" +
+      (rows || "<tr><td colspan='5' class='empty'>暂无环节记录</td></tr>") +
+      "</tbody></table></div>";
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function exportCsv() {
+  const token = getToken();
+  const url = "/api/regulator/traceback/export?" + query();
+  fetch(url, { headers: { Authorization: "Bearer " + token } })
+    .then((resp) => {
+      if (!resp.ok) throw new Error("导出失败，请确认当前账号具备导出权限");
+      return resp.blob();
+    })
+    .then((blob) => {
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "regulator-traceback.csv";
+      link.click();
+      URL.revokeObjectURL(link.href);
+    })
+    .catch((e) => toast(e.message, true));
+}
+</script>
+{% endblock %}

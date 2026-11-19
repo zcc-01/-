@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+<nav class="nav">
+  <span class="brand">{{ app_name }}</span>
+  <a href="/">首页</a>
+  <a href="/farmer">农户工作台</a>
+  <a href="/ops">运营工作台</a>
+  <a href="/regulator">监管回溯</a>
+  <a href="/docs" target="_blank">接口文档</a>
+  <span class="spacer"></span>
+  <span id="who"></span>
+</nav>
+<main class="wrap">
+  {% block content %}{% endblock %}
+</main>
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

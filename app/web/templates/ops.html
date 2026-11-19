@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}运营工作台 · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="tabs">
+  <button class="active" data-tab="queue">认证待审</button>
+  <button data-tab="alerts">预警工单</button>
+  <button data-tab="board">平台看板</button>
+  <button data-tab="rules">预警规则</button>
+</div>
+
+<section id="tab-queue" class="panel">
+  <h2>产地认证审核（UC-12）</h2>
+  <p class="sub">只展示 submitted 状态的申请；超过 3 个工作日未审的工单标红。审核结论一经提交不可修改。</p>
+  <div id="queue_list"><p class="empty">加载中…</p></div>
+</section>
+
+<section id="tab-alerts" class="panel" style="display:none">
+  <h2>溯源异常预警（UC-14 / UC-15）</h2>
+  <p class="sub">工单按级别排序，严重级优先；处置流转：待处置 → 处置中 → 已关闭，关闭必须填写结论。</p>
+  <div id="alert_summary" class="grid cols-3" style="margin-bottom:14px"></div>
+  <div class="row-actions" style="margin-bottom:12px">
+    <button class="ghost small" onclick="scanNow()">立即扫描一轮规则</button>
+    <button class="ghost small" onclick="simulate()">生成演示工单（仅开发环境）</button>
+  </div>
+  <div id="alert_list"></div>
+</section>
+
+<section id="tab-board" class="panel" style="display:none">
+  <h2>平台经营看板（UC-13）</h2>
+  <div id="board_kpi" class="grid cols-3"></div>
+  <div id="board_regions" style="margin-top:14px"></div>
+</section>
+
+<section id="tab-rules" class="panel" style="display:none">
+  <h2>预警规则配置（UC-14）</h2>
+  <p class="sub">规则参数存于 alert_rule.condition，运营可启停；调整阈值无需改代码。</p>
+  <div id="rule_list"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (guard()) {
+  document.querySelectorAll(".tabs button").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      ["queue", "alerts", "board", "rules"].forEach((name) => {
+        document.getElementById("tab-" + name).style.display = name === btn.dataset.tab ? "" : "none";
+      });
+      const map = { queue: loadQueue, alerts: loadAlerts, board: loadBoard, rules: loadRules };
+      map[btn.dataset.tab]();
+    };
+  });
+  loadQueue();
+}
+
+async function loadQueue() {
+  const box = document.getElementById("queue_list");
+  try {
+    const data = await api("/api/ops/certs?status=submitted");
+    if (!data.total) {
+      box.innerHTML = '<p class="empty">没有待审申请</p>';
+      return;
+    }
+    const rows = data.items
+      .map((c) => {
+        const overdue = c.overdue ? '<span class="tag critical">超时</span>' : "";
+        const expired = c.report_expired ? '<span class="tag warning">报告过期</span>' : "";
+        return (
+          "<tr><td class='mono'>" + c.cert_no + "<br><span class='hint'>" + c.farm_name + " · " + c.farm_region + "</span></td>" +
+          "<td>" + c.crop_scope + "</td>" +
+          "<td>土地证 " + (c.land_proof_no || "—") + "<br>检测报告 " + (c.test_report_no || "—") +
+          "<br><span class='hint'>出具日期 " + (c.test_report_at || "—") + "</span></td>" +
+          "<td>承诺书 " + (c.commitment_signed ? "已签" : "未签") + "</td>" +
+          "<td>" + (c.submitted_at || "-") + "<br>" + overdue + expired + "</td>" +
+          "<td class='row-actions'><button class='small' onclick=\"review('" + c.cert_id + "','approve')\">通过</button>" +
+          "<button class='small danger' onclick=\"review('" + c.cert_id + "','reject')\">驳回</button></td></tr>"
+        );
+      })
+      .join("");
+    box.innerHTML =
+      "<table><thead><tr><th>申请</th><th>品类</th><th>材料</th><th>承诺书</th><th>提交时间</th><th>操作</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function review(certId, decision) {
+  const opinion = prompt(decision === "approve" ? "审核意见（通过）" : "驳回原因（必填）", decision === "approve" ? "材料齐全，现场核查一致，同意授予产地认证" : "检测报告超出有效期");
+  if (opinion === null) return;
+  try {
+    await api("/api/ops/certs/" + certId + "/review", {
+      method: "POST",
+      body: JSON.stringify({ decision: decision, opinion: opinion, reject_reason: decision === "reject" ? opinion : null }),
+    });
+    toast(decision === "approve" ? "已通过" : "已驳回");
+    loadQueue();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function levelTag(level, label) {
+  return '<span class="tag ' + level + '">' + label + "</span>";
+}
+
+async function loadAlerts() {
+  const box = document.getElementById("alert_list");
+  try {
+    const data = await api("/api/ops/alerts");
+    const s = data.summary || {};
+    document.getElementById("alert_summary").innerHTML =
+      '<div class="kpi"><div class="label">待处置</div><div class="value">' + (s.open || 0) + "</div></div>" +
+      '<div class="kpi"><div class="label">处置中</div><div class="value">' + (s.acknowledged || 0) + "</div></div>" +
+      '<div class="kpi"><div class="label">未关闭的严重工单</div><div class="value">' + (s.critical || 0) + "</div></div>";
+    if (!data.total) {
+      box.innerHTML = '<p class="empty">暂无工单</p>';
+      return;
+    }
+    const rows = data.items
+      .map((a) => {
+        const actions =
+          a.status === "open"
+            ? "<button class='small ghost' onclick=\"dispose('" + a.alert_id + "','acknowledge')\">受理</button>" +
+              "<button class='small' onclick=\"dispose('" + a.alert_id + "','close')\">关闭</button>"
+            : a.status === "acknowledged"
+            ? "<button class='small' onclick=\"dispose('" + a.alert_id + "','close')\">关闭</button>"
+            : "<span class='hint'>已归档</span>";
+        return (
+          "<tr><td>" + levelTag(a.level, a.level_label) + "</td><td class='mono'>" + a.rule_code + "</td>" +
+          "<td>" + a.title + "<br><span class='hint'>对象 " + a.target_type + ":" + a.target_id + "</span></td>" +
+          "<td><span class='tag muted'>" + a.status_label + "</span></td>" +
+          "<td>" + (a.created_at || "") + "</td>" +
+          "<td>" + (a.resolution || "—") + "</td>" +
+          "<td class='row-actions'>" + actions + "</td></tr>"
+        );
+      })
+      .join("");
+    box.innerHTML =
+      "<table><thead><tr><th>级别</th><th>规则</th><th>工单</th><th>状态</th><th>生成时间</th><th>处置结论</th><th>操作</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function dispose(alertId, action) {
+  const resolution = action === "close" ? prompt("处置结论（关闭必填）", "已核实并处理完毕") : "";
+  if (resolution === null) return;
+  try {
+    await api("/api/ops/alerts/" + alertId + "/dispose", {
+      method: "POST",
+      body: JSON.stringify({ action: action, resolution: resolution || "" }),
+    });
+    toast("处置已记录");
+    loadAlerts();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function scanNow() {
+  try {
+    const data = await api("/api/ops/alerts/scan", { method: "POST" });
+    toast("扫描完成，新增 " + data.created + " 条");
+    loadAlerts();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function simulate() {
+  const ruleCode = prompt("规则编号（R-01 / R-02 / R-03）", "R-03");
+  if (!ruleCode) return;
+  try {
+    await api("/api/ops/alerts/simulate", {
+      method: "POST",
+      body: JSON.stringify({ rule_code: ruleCode, target_id: "BAT-DEMO-" + Date.now().toString().slice(-4) }),
+    });
+    toast("已生成演示工单");
+    loadAlerts();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function kpi(label, metric) {
+  if (!metric) return "";
+  const na = metric.available === false;
+  const value = na ? "—" : metric.value === null ? "—" : metric.value;
+  const note = na ? metric.note || "依赖域未合入" : "";
+  return (
+    '<div class="kpi"><div class="label">' + label + '</div><div class="value' + (na ? " na" : "") + '">' +
+    value + '</div><div class="note">' + note + "</div></div>"
+  );
+}
+
+async function loadBoard() {
+  const box = document.getElementById("board_kpi");
+  try {
+    const data = await api("/api/ops/dashboard");
+    let html = "";
+    html += kpi("产地总数", data.farms.total);
+    html += kpi("已认证产地", data.farms.certified);
+    html += kpi("待审认证", { value: data.certs.pending, available: true });
+    html += kpi("累计成交额（元）", data.sales.gmv);
+    html += kpi("订单数", data.sales.orders);
+    html += kpi("扫码总量", data.scans.total);
+    html += kpi("平均评分", data.reputation.avg_rating);
+    html += kpi("待处置预警", { value: data.alerts.open, available: true });
+    box.innerHTML = html;
+
+    const regions = data.regions.available ? data.regions.items : [];
+    document.getElementById("board_regions").innerHTML =
+      '<div class="panel"><h2>扫码区域分布</h2><p class="sub">数据来源：scan_log（溯源域）</p>' +
+      (regions.length
+        ? "<table><thead><tr><th>省份</th><th>扫码次数</th></tr></thead><tbody>" +
+          regions.map((r) => "<tr><td>" + r.province + "</td><td>" + r.scans + "</td></tr>").join("") +
+          "</tbody></table>"
+        : '<p class="empty">' + (data.regions.note || "暂无数据") + "</p>") +
+      "</div>";
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function loadRules() {
+  const box = document.getElementById("rule_list");
+  try {
+    const data = await api("/api/ops/alert-rules");
+    const rows = data.items
+      .map(
+        (r) =>
+          "<tr><td class='mono'>" + r.code + "</td><td>" + r.name + "</td><td>" + levelTag(r.level, r.level_label) +
+          "</td><td class='mono'>" + JSON.stringify(r.condition) + "</td><td>" + r.message + "</td>" +
+          "<td><label style='display:flex;gap:6px;align-items:center;color:inherit'>" +
+          "<input type='checkbox' style='width:auto' " + (r.enabled ? "checked" : "") +
+          " onchange=\"toggleRule('" + r.code + "', this.checked)\" /> 启用</label></td></tr>"
+      )
+      .join("");
+    box.innerHTML =
+      "<table><thead><tr><th>规则</th><th>名称</th><th>级别</th><th>参数</th><th>消息模板</th><th>状态</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function toggleRule(code, enabled) {
+  try {
+    await api("/api/ops/alert-rules/" + code, { method: "POST", body: JSON.stringify({ enabled: enabled }) });
+    toast("规则已更新");
+  } catch (e) {
+    toast(e.message, true);
+    loadRules();
+  }
+}
+</script>
+{% endblock %}

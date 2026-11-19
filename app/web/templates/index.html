@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}首页 · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="panel">
+  <h2>用户与运营域 · 功能入口</h2>
+  <p class="sub">
+    本分支（feat/identity-ops）覆盖 UC-11～UC-15：注册登录与鉴权、产地认证审核、经营数据看板、溯源异常预警、监管回溯与处置。
+    溯源链域与交易域由同组其他分支提供，未合入时相关指标显示「—」而不是 0。
+  </p>
+  <div class="grid cols-3">
+    <div class="kpi">
+      <div class="label">UC-11 注册登录与鉴权</div>
+      <div class="value" style="font-size:16px">JWT + RBAC</div>
+      <div class="note">四类角色权限矩阵、越权 403 并留痕审计、验证码登录</div>
+      <p><a href="/login">进入登录页 →</a></p>
+    </div>
+    <div class="kpi">
+      <div class="label">UC-12 产地认证审核</div>
+      <div class="value" style="font-size:16px">材料 + 状态机</div>
+      <div class="note">缺项存草稿、结论单向不可改、认证有效期 12 个月</div>
+      <p><a href="/ops">进入审核工作台 →</a></p>
+    </div>
+    <div class="kpi">
+      <div class="label">UC-13 / UC-14 / UC-15</div>
+      <div class="value" style="font-size:16px">看板 · 预警 · 回溯</div>
+      <div class="note">三条可配置预警规则、工单处置流转、监管报表导出</div>
+      <p><a href="/regulator">进入监管回溯 →</a></p>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>演示账号</h2>
+  <p class="sub">种子数据自动写入，口令统一为 <span class="mono">Passw0rd!</span>（DEV_MODE=true 时也可用免密登录）</p>
+  <table>
+    <thead><tr><th>账号</th><th>角色</th><th>可做什么</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">farmer01</td><td>农户</td><td>产地入驻、提交认证材料、查看本产地经营看板</td></tr>
+      <tr><td class="mono">operator01</td><td>平台运营</td><td>审核认证、查看平台看板、处置预警工单</td></tr>
+      <tr><td class="mono">regulator01</td><td>监管人员</td><td>按批次回溯链路、导出监管报表</td></tr>
+      <tr><td class="mono">consumer01</td><td>消费者</td><td>仅可访问自身信息，用于越权测试</td></tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

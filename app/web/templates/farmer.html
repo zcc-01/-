@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}农户工作台 · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="tabs">
+  <button class="active" data-tab="apply">产地入驻</button>
+  <button data-tab="cert">提交认证</button>
+  <button data-tab="mine">我的申请</button>
+  <button data-tab="board">经营看板</button>
+</div>
+
+<section id="tab-apply" class="panel">
+  <h2>产地入驻（UC-12 前置条件）</h2>
+  <p class="sub">提交产地基本信息，创建后即可提交认证材料。同一农户可有多个产地。</p>
+  <div class="grid cols-2">
+    <div>
+      <label>产地名称</label><input id="farm_name" placeholder="例如：洛川红富士苹果园" />
+      <label>省份</label><input id="province" placeholder="陕西省" />
+      <label>城市</label><input id="city" placeholder="延安市" />
+    </div>
+    <div>
+      <label>详细地址</label><input id="address" placeholder="洛川县凤栖镇" />
+      <label>面积（亩）</label><input id="area_mu" type="number" min="0" step="0.5" />
+      <p style="margin-top:22px"><button onclick="applyFarm()">提交入驻</button></p>
+    </div>
+  </div>
+</section>
+
+<section id="tab-cert" class="panel" style="display:none">
+  <h2>提交产地认证材料（UC-12）</h2>
+  <p class="sub">材料缺项时保存为草稿并返回缺项清单，草稿不进入待审队列；材料齐全则进入待审队列。</p>
+  <div class="grid cols-2">
+    <div>
+      <label>选择产地</label><select id="cert_farm"></select>
+      <label>认证品类范围</label><input id="crop_scope" placeholder="例如：红富士苹果" />
+      <label>土地承包经营权证编号</label><input id="land_proof_no" placeholder="陕农地证（2021）第 0731 号" />
+    </div>
+    <div>
+      <label>检测报告编号</label><input id="test_report_no" placeholder="SX-JC-2026-0412" />
+      <label>检测报告出具日期</label><input id="test_report_at" type="date" />
+      <label style="display:flex;gap:8px;align-items:center;margin-top:14px">
+        <input id="commitment_signed" type="checkbox" style="width:auto" /> 已签署质量安全承诺书
+      </label>
+      <p style="margin-top:16px"><button onclick="submitCert()">提交认证</button></p>
+    </div>
+  </div>
+  <div id="cert_result"></div>
+</section>
+
+<section id="tab-mine" class="panel" style="display:none">
+  <h2>我的认证申请</h2>
+  <p class="sub">审核结论一经提交不可修改；如需变更须重新发起申请。</p>
+  <div id="mine_list"></div>
+</section>
+
+<section id="tab-board" class="panel" style="display:none">
+  <h2>经营看板（UC-13）</h2>
+  <p class="sub">指标依赖其它业务域时显示「—」，表示该域尚未合入，而不是数值为 0。</p>
+  <label>选择产地</label><select id="board_farm" onchange="loadBoard()"></select>
+  <div class="grid cols-3" id="board_kpi" style="margin-top:14px"></div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+if (guard()) {
+  document.querySelectorAll(".tabs button").forEach((btn) => {
+    btn.onclick = () => {
+      document.querySelectorAll(".tabs button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      ["apply", "cert", "mine", "board"].forEach((name) => {
+        document.getElementById("tab-" + name).style.display = name === btn.dataset.tab ? "" : "none";
+      });
+      if (btn.dataset.tab === "mine") loadMine();
+      if (btn.dataset.tab === "board") loadFarms();
+    };
+  });
+  loadFarms();
+}
+
+async function loadFarms() {
+  try {
+    const data = await api("/api/farms/mine");
+    const options = data.items
+      .map((f) => '<option value="' + f.farm_id + '">' + f.farm_name + "（" + f.cert_status + "）</option>")
+      .join("");
+    document.getElementById("cert_farm").innerHTML = options || "<option value=''>请先完成产地入驻</option>";
+    document.getElementById("board_farm").innerHTML = options || "<option value=''>无产地</option>";
+    if (data.items.length) loadBoard();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function applyFarm() {
+  try {
+    const data = await api("/api/farms", {
+      method: "POST",
+      body: JSON.stringify({
+        farm_name: document.getElementById("farm_name").value.trim(),
+        province: document.getElementById("province").value.trim(),
+        city: document.getElementById("city").value.trim(),
+        address: document.getElementById("address").value.trim(),
+        area_mu: parseFloat(document.getElementById("area_mu").value) || null,
+      }),
+    });
+    toast("产地已创建：" + data.farm_name);
+    loadFarms();
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+async function submitCert() {
+  const body = {
+    farm_id: document.getElementById("cert_farm").value,
+    crop_scope: document.getElementById("crop_scope").value.trim(),
+    land_proof_no: document.getElementById("land_proof_no").value.trim() || null,
+    test_report_no: document.getElementById("test_report_no").value.trim() || null,
+    test_report_at: document.getElementById("test_report_at").value || null,
+    commitment_signed: document.getElementById("commitment_signed").checked,
+  };
+  const box = document.getElementById("cert_result");
+  try {
+    const data = await api("/api/certs", { method: "POST", body: JSON.stringify(body) });
+    if (data.saved_as === "draft") {
+      box.innerHTML =
+        '<p class="tag warning">已存为草稿</p><p class="hint">缺项：' + data.missing_items.join("、") + "</p>";
+      toast("材料缺项，已存草稿", true);
+    } else {
+      box.innerHTML = '<p class="tag">已提交，等待审核</p><p class="hint">' + data.hint + "</p>";
+      toast("提交成功");
+    }
+    loadFarms();
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+
+async function loadMine() {
+  const box = document.getElementById("mine_list");
+  try {
+    const data = await api("/api/certs/mine");
+    if (!data.total) {
+      box.innerHTML = '<p class="empty">暂无认证申请</p>';
+      return;
+    }
+    const rows = data.items
+      .map((c) => {
+        const badge = c.status === "approved" ? "" : " muted";
+        return (
+          "<tr><td class='mono'>" + c.cert_no + "</td><td>" + c.farm_name + "</td><td>" + c.crop_scope +
+          "</td><td><span class='tag" + badge + "'>" + c.status_label + "</span></td><td>" +
+          (c.submitted_at || "-") + "</td><td>" + (c.valid_to || "-") + "</td><td>" +
+          (c.review_opinion || "-") + "</td></tr>"
+        );
+      })
+      .join("");
+    box.innerHTML =
+      "<table><thead><tr><th>认证编号</th><th>产地</th><th>品类</th><th>状态</th><th>提交时间</th><th>有效期至</th><th>审核意见</th></tr></thead><tbody>" +
+      rows + "</tbody></table>";
+  } catch (e) {
+    toast(e.message, true);
+  }
+}
+
+function kpi(label, metric) {
+  if (!metric) return "";
+  const na = metric.available === false;
+  const value = na ? "—" : metric.value;
+  const note = na ? metric.note || "依赖域未合入" : "";
+  return (
+    '<div class="kpi"><div class="label">' + label + '</div><div class="value' + (na ? " na" : "") + '">' +
+    value + '</div><div class="note">' + note + "</div></div>"
+  );
+}
+
+async function loadBoard() {
+  const farmId = document.getElementById("board_farm").value;
+  const box = document.getElementById("board_kpi");
+  if (!farmId) {
+    box.innerHTML = '<p class="empty">请先完成产地入驻</p>';
+    return;
+  }
+  try {
+    const data = await api("/api/farms/" + farmId + "/dashboard");
+    let html =
+      kpi("累计销售额（元）", data.sales) +
+      kpi("扫码次数", data.scans) +
+      kpi("好评率（%）", data.positive_rate);
+    if (data.cert) {
+      html +=
+        '<div class="kpi"><div class="label">产地认证</div><div class="value" style="font-size:16px">' +
+        data.cert.status_label + '</div><div class="note">有效期至 ' + (data.cert.valid_to || "-") + "</div></div>";
+    }
+    const regions = data.regions && data.regions.available ? data.regions.items : [];
+    html +=
+      '<div class="kpi"><div class="label">扫码区域分布</div><div class="note">' +
+      (regions.length ? regions.map((r) => r.province + " " + r.scans).join("，") : "依赖溯源域数据") +
+      "</div></div>";
+    box.innerHTML = html;
+  } catch (e) {
+    box.innerHTML = "";
+    toast(e.message, true);
+  }
+}
+</script>
+{% endblock %}
