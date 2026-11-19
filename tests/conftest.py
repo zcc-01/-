@@ -120,15 +120,16 @@ def batch_payload(seed):
     }
 
 
-def create_batch(db, seed, *, status: str | None = None):
+def create_batch(db, seed, *, status: str | None = None, plot_no: str = "A-03",
+                 crop_name: str = "临安山核桃"):
     """直接走 Service 建档，必要时把状态推到指定值（绕过接口只为测试准备数据）。"""
     from app.trace.schemas import BatchCreate
     from app.trace.service import TraceService
 
     payload = BatchCreate(
         farm_id=seed.farm.farm_id,
-        crop_name="临安山核桃",
-        plot_no="A-03",
+        crop_name=crop_name,
+        plot_no=plot_no,
         plant_date="2026-03-20",
         harvest_date="2026-09-05",
         expected_yield=2600,
