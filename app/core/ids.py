@@ -53,3 +53,13 @@ def new_batch_no() -> str:
     """批次号（对外可见的业务编号）：PC-YYYYMMDD-XXXX。"""
     stamp = time.strftime("%Y%m%d")
     return f"PC-{stamp}-{secrets.token_hex(2).upper()}"
+
+
+def new_biz_no(prefix: str) -> str:
+    """通用对外业务单号：{PREFIX}-YYYYMMDD-XXXX。
+
+    订单、支付、预警单等需要人眼识别与口头沟通的单据统一走这里，
+    与主键（内部雪花 ID）分开：主键不对外暴露，业务单号给用户看。
+    """
+    stamp = time.strftime("%Y%m%d")
+    return f"{prefix.upper()}-{stamp}-{secrets.token_hex(2).upper()}"

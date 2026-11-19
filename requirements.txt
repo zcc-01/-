@@ -1,5 +1,6 @@
 # 运行期依赖（开发环境用 requirements-dev.txt 追加测试与静态检查工具）
 fastapi>=0.115,<1.0
+python-multipart>=0.0.9  # 页面表单解析（Jinja2 页面 POST 提交）
 uvicorn[standard]>=0.30,<1.0
 SQLAlchemy>=2.0,<3.0
 pydantic>=2.8,<3.0
