@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3774AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00)
-![Tests](https://img.shields.io/badge/tests-44%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-79%20passed-brightgreen)
 
 ## 项目简介
 
@@ -19,13 +19,17 @@
 
 ## 当前进度
 
-| 业务域 | 负责人 | 用例 | 状态 |
+| 业务域 | 用例 | 分支 | 状态 |
 |---|---|---|---|
-| 溯源链域 + 平台公共基础 | 张××（组长） | UC-01～UC-05 | ✅ 已完成，含 44 个自动化测试 |
-| 交易域 | 李×× | UC-06～UC-10 | 🟡 进行中（`feat/trade`） |
-| 用户与运营域 | 王×× | UC-11～UC-15 | 🟡 进行中（`feat/identity-ops`） |
+| 溯源链域 + 平台公共基础 | UC-01～UC-05 | `feat/trace-chain` | ✅ 完成（44 个用例） |
+| 交易域 | UC-06～UC-10 | `feat/trade` → 已并入 `feat/integrate` | ✅ 完成（18 个用例） |
+| 用户与运营域 | UC-11～UC-15 | `feat/identity-ops` → 已并入 `feat/integrate` | ✅ 完成（17 个用例） |
 
-本仓库当前可直接运行的部分：**溯源链域全链路 + 登录鉴权 + 统一响应/异常 + 扫码页面 + CI/Codespaces**。
+> 说明：`feat/trade` 与 `feat/identity-ops` 在远程仅含 README，为让系统可运行，
+> 两域在 `feat/integrate` 上按报告用例规约补齐，并与溯源域打通四处跨域联动。
+> 整合过程、依赖关系与冲突处理见 **[docs/分支整合说明.md](docs/分支整合说明.md)**。
+
+**当前已可完整演示**：扫码溯源 → 商品检索 → 加购下单 → 支付发货收货 → 评价 → 认证审核 → 预警处置 → 监管回溯。
 
 ## 核心特性
 
@@ -35,21 +39,24 @@
 | 断链定位 | 校验返回 `broken_at`、`reason`（内容篡改／前序失配／序号缺失／尾部截断），不抛异常 |
 | 并发安全 | 序号由 `batch.event_count` 原子自增分配，`(batch_id, seq_no)` 唯一索引兜底，冲突自动重试 |
 | 双粒度赋码 | 批次码 + 单品码，码值由「批次号+类型+四位序号」派生，重复提交天然幂等 |
-| 交易同源（预留） | 溯源码状态提供 `active/revoked`，交易域下单前回查 |
+| 交易同源 | 上架校验批次已采收、下单再校验未结批/未封存；溯源码 `revoked` 即不可售 |
+| 超卖防护 | `UPDATE product SET stock = stock - n WHERE stock >= n`，扣不动整单回滚（BR-05） |
+| 支付幂等 | 应用层先查成功流水 + 部分唯一索引兜底，重复点击不产生第二条（BR-04） |
+| 跨域预警 | 断链扫码、环节时间倒挂自动开预警单，`dedup_key` 保证不刷屏 |
 | 扫码日志 | 匿名可扫码，日志写入失败降级不阻断查询（UC-04 异常流程 6a） |
 | 一键复现 | devcontainer + `scripts/bootstrap.sh`，克隆后一条命令启动 |
 
 ## 分层架构
 
 ```
-表现层    Jinja2 + 原生 CSS（/trace/{code} 扫码页）
+表现层    Jinja2 + 原生 CSS（首页 / 商城 / 购物车 / 订单 / 扫码页 / 运营控制台）
 接口层    FastAPI Router + Pydantic v2（参数校验、鉴权、统一响应）
 业务层    TraceService（用例编排、事务边界、业务规则）
 数据层    SQLAlchemy 2.0 ORM（SQLite 开发 / MySQL 生产）
 基础设施  HashChain 哈希链、JWT、雪花号、二维码导出、日志
 ```
 
-横向按业务域切分为 `trace` / `trade` / `account` 三个包，域间只通过业务层接口调用；
+横向按业务域切分为 `trace` / `trade` / `account` / `ops` 四个包，域间只通过业务层接口调用；
 公共能力（统一响应、异常、鉴权、主键、数据库会话）收在 `app/core` 与 `app/db`，由组长维护。
 
 ## 快速开始
@@ -101,10 +108,10 @@ python -m uvicorn app.main:app --reload
 
 | 账号 | 角色 | 用途 |
 |---|---|---|
-| `farmer01` | 农户 | 建档、录入环节、赋码 |
-| `operator01` | 平台运营 | 批次查询、链校验 |
-| `regulator01` | 监管人员 | 全量批次与校验 |
-| `consumer01` | 消费者 | 普通访问 |
+| `farmer01` | 农户 | 建档、录环节、赋码、上架商品、发货、提交认证 |
+| `operator01` | 平台运营 | 全量批次、链校验、认证审核、看板、预警处置 |
+| `regulator01` | 监管人员 | 全量批次、链校验、监管回溯与处置 |
+| `consumer01` | 消费者 | 商城浏览、加购下单、支付收货、评价 |
 
 演示溯源码：`PC-20251101-DEMO-ITM0001`（扫码页 `/trace/PC-20251101-DEMO-ITM0001`）
 
@@ -131,6 +138,48 @@ python -m uvicorn app.main:app --reload
 | GET | `/api/batches/{id}/verify` | 运营/监管 | 链完整性校验（UC-05） |
 | GET | `/api/batches/{id}/scans` | 运营/监管 | 扫码日志 |
 | GET | `/api/health` | 公开 | 健康检查 |
+
+交易域（UC-06～UC-10）：
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | `/api/products` | 农户/运营 | 商品上架（校验批次已采收） |
+| PATCH | `/api/products/{id}` | 农户/运营 | 改价/改库存/上下架 |
+| GET | `/api/products` | 公开 | 检索筛选（关键词/类目/价格/认证/排序） |
+| GET | `/api/products/{id}` | 公开 | 商品详情（含溯源与评价） |
+| GET | `/api/cart` · POST · PATCH · DELETE | 登录 | 购物车增删改查 |
+| POST | `/api/orders` | 登录 | 下单（服务端重算金额 + 原子扣库存） |
+| GET | `/api/orders` · `/api/orders/{id}` | 登录 | 订单列表/详情 |
+| POST | `/api/orders/{id}/pay` | 本人 | 支付（幂等，失败可重试 3 次） |
+| POST | `/api/orders/{id}/cancel` | 本人/运营 | 取消并释放库存（BR-06） |
+| POST | `/api/orders/{id}/ship` · `/receive` | 农户/运营 · 本人 | 发货 / 确认收货 |
+| POST | `/api/orders/{id}/reviews` | 本人 | 评价（仅收货后，UC-10） |
+
+用户与运营域（UC-11～UC-15）：
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | `/api/certs` | 农户 | 提交产地认证（材料不全存草稿） |
+| GET | `/api/certs` · `/api/certs/{id}` | 农户/运营 | 申请列表与详情（含审核轨迹） |
+| POST | `/api/certs/{id}/review` | 运营 | 审核（结论不可修改 BR-08） |
+| POST | `/api/certs/sweep-expiring` | 运营 | 认证临期提醒（BR-09） |
+| GET | `/api/dashboard` | 农户/运营/监管 | 经营看板（农户本场 / 运营全平台） |
+| GET | `/api/alerts` · `/api/alerts/stats` | 运营/监管 | 预警单列表与统计 |
+| POST | `/api/alerts/{id}/handle` | 运营 | 处置预警单 |
+| GET | `/api/regulator/trace/{code}` | 监管 | 监管回溯（链路 + 预警 + 交易上下文） |
+| POST | `/api/regulator/trace/{code}/dispose` | 监管 | 处置动作留痕 |
+| GET | `/api/farms/mine` | 农户 | 我的产地 |
+
+页面入口（服务端渲染，与 API 共用 service 层）：
+
+| 路径 | 说明 |
+|---|---|
+| `/` | 首页：横幅 + 商品推荐 + 分类 + 平台能力入口 |
+| `/shop` · `/shop/{id}` | 商品检索（搜索/分类页签/排序）与详情（属性表/立即购买/评价） |
+| `/cart` · `/orders` | 购物车结算、订单列表与支付/取消/收货/评价 |
+| `/console` | 运营控制台：看板 + 商品管理 + 订单管理 + 认证审核 + 异常预警 |
+| `/trace/{code}` | 扫码落地页（时间轴 + 链校验 + 断链告警） |
+| `/login` · `/logout` | 页面登录（HttpOnly Cookie 承载同一 JWT） |
 
 完整入参/出参与调用示例见 [`docs/接口文档.md`](docs/接口文档.md)。
 
@@ -166,11 +215,14 @@ python -m uvicorn app.main:app --reload
 │   ├── db/                 # 引擎/会话、建表、种子数据
 │   ├── common/             # 跨域最小契约：User、Farm、Role
 │   ├── trace/              # 溯源链域：models/schemas/service/chain/router/二维码
-│   ├── account/            # 用户与运营域（登录部分，其余由王×× 扩展）
-│   ├── web/                # 扫码页模板与静态样式
+│   ├── account/            # 登录与鉴权（JWT 签发）
+│   ├── trade/              # 交易域：商品/购物车/订单/支付/评价
+│   ├── ops/                # 用户与运营域：认证审核/看板/预警/监管
+│   ├── web/                # 页面路由、模板骨架与统一渲染上下文
 │   └── main.py             # 应用入口、中间件、异常处理器、页面路由
 ├── docs/
 │   ├── use-cases/          # UC-01～UC-05 用例规格
+│   ├── 分支整合说明.md      # 三分支功能对照、依赖、冲突处理与验证
 │   ├── 接口文档.md
 │   ├── 数据库设计.md
 │   ├── 设计说明.md          # 类图/顺序图（PlantUML）
@@ -179,14 +231,14 @@ python -m uvicorn app.main:app --reload
 │   └── 测试说明.md
 ├── sql/schema_mysql.sql    # 生产 DDL + 只追加权限示例
 ├── scripts/                # bootstrap / seed / smoke
-└── tests/                  # 44 个用例：链路、并发、鉴权、赋码、扫码
+└── tests/                  # 79 个用例：链路、并发、交易、运营、页面
 ```
 
 ## 测试与质量
 
 ```bash
 ruff check .            # 静态检查
-pytest -q               # 44 passed
+pytest -q               # 79 passed
 bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 ```
 
@@ -195,7 +247,9 @@ bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 - 链完整性：正常链、内容篡改、前序失配、中间记录删除、尾部截断；
 - 并发：6 线程 × 2 次追加，序号连续且链不断裂（`tests/test_concurrency.py`）；
 - 业务规则：重复建档 409、越权 403、状态机禁止回退、赋码幂等与上限、作废码 410；
-- 页面：扫码页正常渲染、断链告警条、码不存在 404。
+- 交易域：超卖拦截、支付幂等与重试上限、取消释放库存、评价前置条件、结批批次不可售；
+- 运营域：BR-07 单份在途、BR-08 结论不可改、报告过期驳回、看板口径、断链/倒挂自动预警、监管回溯留痕；
+- 页面：扫码页渲染、断链告警条、码不存在 404、控制台按角色收敛数据。
 
 ## 团队与纵向分工
 
@@ -206,7 +260,9 @@ bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 |---|---|---|---|---|
 | 张××（组长） | 溯源链域 + 公共基础 | UC-01～UC-05 | `app/trace`、`app/core` | `feat/trace-chain` |
 | 李×× | 交易域 | UC-06～UC-10 | `app/trade` | `feat/trade` |
-| 王×× | 用户与运营域 | UC-11～UC-15 | `app/account` | `feat/identity-ops` |
+| 王×× | 用户与运营域 | UC-11～UC-15 | `app/account`、`app/ops` | `feat/identity-ops` |
+
+三域汇总在 `feat/integrate`，整合说明见 [`docs/分支整合说明.md`](docs/分支整合说明.md)。
 
 详细阶段产出物与报告章节对应见 [`docs/分工与协作说明.md`](docs/分工与协作说明.md)。
 
@@ -234,8 +290,10 @@ docs(trace): 补充 UC-01~UC-05 用例规格
 | 链条外部锚定 | 单机哈希链 | 引入定期摘要快照 / 第三方存证 |
 | `location` 参与摘要 | 未参与（对齐报告公式） | v1.1 纳入哈希口径并做数据迁移 |
 | 异步扫码日志 | 同会话尽力写入 | 换消息队列异步补写 |
-| 交易域联动 | 仅预留码状态 | 李×× 在 `feat/trade` 回查码状态 |
-| 预警工单 | 仅返回 warning 提示 | 王×× 在运营域落 `alert` 表与规则引擎 |
+| 支付渠道 | 本地模拟网关（`payment_gateway.py` 抽象） | 接真实渠道只需新增实现 |
+| 商品图片 | CSS 色块占位 | 增加图片字段与上传接口 |
+| 库存扣减 | 单库条件更新 | 分库场景引入库存服务/分布式锁 |
+| 认证材料 | 结构化字段 + JSON 材料 | 接入对象存储与在线核验 |
 
 ## 许可
 
