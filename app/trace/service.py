@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from datetime import UTC, datetime
 from typing import Any
@@ -17,9 +18,12 @@ from app.common.models import Farm, User
 from app.core.config import settings
 from app.core.errors import BizError, Conflict, ErrorCode, Forbidden, NotFound, RuleViolation
 from app.core.ids import new_batch_no
+from app.ops.alerting import raise_chain_broken, raise_time_inversion
 from app.trace.chain import HashChain, VerifyResult, canonical_detail, normalize_time
 from app.trace.models import Batch, BatchStatus, CodeType, ScanLog, Stage, TraceCode, TraceEvent
 from app.trace.schemas import BatchCreate, CodeGenerate, EventCreate
+
+logger = logging.getLogger("agritrace.trace")
 
 _MOBILE_UA = re.compile(r"Mobile|Android|iPhone|iPad", re.IGNORECASE)
 
@@ -192,10 +196,19 @@ class TraceService:
             .limit(1)
         )
         if last is not None and occurred < last.occurred_at:
-            # UC-14 扩展点：时间倒挂不阻断录入，但返回预警提示，供运营域生成工单
+            # UC-14 扩展 UC-02：时间倒挂不阻断录入，但生成预警单供运营复核。
+            # 预警单与事件在同一事务提交（append 之后才 commit），避免漏报。
             warning = (
                 f"环节时间早于上一条记录（{last.occurred_at:%Y-%m-%d %H:%M:%S}），"
                 "已记录并提交平台复核"
+            )
+            raise_time_inversion(
+                db,
+                batch_id=batch_id,
+                stage=payload.stage,
+                occurred_at=occurred.strftime("%Y-%m-%d %H:%M:%S"),
+                prev_stage=last.stage,
+                prev_time=last.occurred_at.strftime("%Y-%m-%d %H:%M:%S"),
             )
 
         event = HashChain.append(
@@ -391,6 +404,12 @@ class TraceService:
             ip=ip,
         )
 
+        # UC-04 异常流 4a：校验发现断链时自动生成预警单。
+        # 降级要求（表 3-6）：预警建单失败绝不能影响扫码结果返回，
+        # 因此单独事务 + 吞异常 + 记日志，失败时消费者仍然看到完整履历与告警条。
+        if not chain.ok:
+            cls._safe_raise_chain_alert(db, batch.batch_id, code.code_value, chain)
+
         return {
             "code_value": code.code_value,
             "code_type": code.code_type,
@@ -438,6 +457,26 @@ class TraceService:
             return {}
         rows = db.scalars(select(User).where(User.user_id.in_(operator_ids))).all()
         return {u.user_id: mask_name(u.display_name or u.username) for u in rows}
+
+    @staticmethod
+    def _safe_raise_chain_alert(
+        db: Session, batch_id: str, code_value: str, chain: VerifyResult
+    ) -> None:
+        """生成断链预警单，失败只记日志、不影响扫码（表 3-6 降级要求）。"""
+        try:
+            alert = raise_chain_broken(
+                db,
+                batch_id=batch_id,
+                code_value=code_value,
+                broken_at=chain.broken_at,
+                reason=chain.reason,
+            )
+            db.commit()
+            if alert is not None:
+                logger.warning("已为批次 %s 生成断链预警单 %s", batch_id, alert.alert_no)
+        except Exception as exc:  # pragma: no cover - 预警失败不应阻断扫码
+            db.rollback()
+            logger.error("断链预警单生成失败 batch=%s: %s", batch_id, exc)
 
     @staticmethod
     def _write_scan_log(
