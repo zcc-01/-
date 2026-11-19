@@ -1,0 +1,14 @@
+# 统一换行符：避免 Windows 检出后 shell 脚本变成 CRLF，导致 Codespaces/Linux 报 bad interpreter
+* text=auto eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+
+# 二进制
+*.png binary
+*.jpg binary
+*.db binary
