@@ -74,14 +74,14 @@ async function loadQueue() {
           "<br><span class='hint'>出具日期 " + (c.test_report_at || "—") + "</span></td>" +
           "<td>承诺书 " + (c.commitment_signed ? "已签" : "未签") + "</td>" +
           "<td>" + (c.submitted_at || "-") + "<br>" + overdue + expired + "</td>" +
-          "<td class='row-actions'><button class='small' onclick=\"review('" + c.cert_id + "','approve')\">通过</button>" +
-          "<button class='small danger' onclick=\"review('" + c.cert_id + "','reject')\">驳回</button></td></tr>"
+          "<td><div class='row-actions'><button class='small' onclick=\"review('" + c.cert_id + "','approve')\">通过</button>" +
+          "<button class='small danger' onclick=\"review('" + c.cert_id + "','reject')\">驳回</button></div></td></tr>"
         );
       })
       .join("");
     box.innerHTML =
-      "<table class='cols'><colgroup><col style='width:22%'><col style='width:11%'><col style='width:30%'>" +
-      "<col style='width:9%'><col style='width:15%'><col style='width:13%'></colgroup>" +
+      "<table class='cols'><colgroup><col style='width:22%'><col style='width:12%'><col style='width:27%'>" +
+      "<col style='width:10%'><col style='width:16%'><col style='width:13%'></colgroup>" +
       "<thead><tr><th>申请</th><th>品类</th><th>材料</th><th>承诺书</th><th>提交时间</th><th>操作</th></tr></thead><tbody>" +
       rows + "</tbody></table>";
   } catch (e) {
@@ -137,7 +137,7 @@ async function loadAlerts() {
           "<td><span class='tag muted'>" + a.status_label + "</span></td>" +
           "<td>" + (a.created_at || "") + "</td>" +
           "<td>" + (a.resolution || "—") + "</td>" +
-          "<td class='row-actions'>" + actions + "</td></tr>"
+          "<td><div class='row-actions'>" + actions + "</div></td></tr>"
         );
       })
       .join("");

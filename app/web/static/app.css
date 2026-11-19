@@ -106,7 +106,7 @@ table.cols { table-layout: fixed; }
 table.cols th { white-space: nowrap; }
 table.cols td.mono, table.cols td.col-tight { white-space: nowrap; }
 table.cols .tag { white-space: nowrap; }
-table.cols .row-actions { flex-wrap: nowrap; white-space: nowrap; }
+table.cols .row-actions { flex-wrap: nowrap; white-space: nowrap; justify-content: flex-start; }
 table.cols td { overflow-wrap: break-word; word-break: break-word; }
 
 .tag {
@@ -153,4 +153,6 @@ table.cols td { overflow-wrap: break-word; word-break: break-word; }
 
 .hint { color: var(--muted); font-size: 13px; }
 .empty { color: var(--muted); padding: 24px 0; text-align: center; }
-.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+/* 防御：操作按钮容器只能是 <div>，若误加到 <td> 上会破坏表格布局、导致底边线错位 */
+td.row-actions { display: table-cell; }.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
