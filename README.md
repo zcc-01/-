@@ -6,7 +6,7 @@
 ![Python](https://img.shields.io/badge/Python-3.11-3774AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00)
-![Tests](https://img.shields.io/badge/tests-79%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-85%20passed-brightgreen)
 
 ## 项目简介
 
@@ -25,9 +25,11 @@
 | 交易域 | UC-06～UC-10 | `feat/trade` → 已并入 `feat/integrate` | ✅ 完成（18 个用例） |
 | 用户与运营域 | UC-11～UC-15 | `feat/identity-ops` → 已并入 `feat/integrate` | ✅ 完成（17 个用例） |
 
-> 说明：`feat/trade` 与 `feat/identity-ops` 在远程仅含 README，为让系统可运行，
-> 两域在 `feat/integrate` 上按报告用例规约补齐，并与溯源域打通四处跨域联动。
-> 整合过程、依赖关系与冲突处理见 **[docs/分支整合说明.md](docs/分支整合说明.md)**。
+> 说明：整合开始时两个分支仅含 README，因此交易域与运营域在 `feat/integrate` 上按报告用例规约补齐；
+> 之后组员推送了各自的真实实现（`feat/trade` 93 文件、`feat/identity-ops` 63 文件且历史被强推），
+> 合并探测发现交易域是两套字段级不兼容的模型、运营域分支无共同祖先，
+> 最终采取「代码择一 + 文档与 RBAC 能力复用」的方案，全过程与冲突清单见
+> **[docs/分支整合说明.md](docs/分支整合说明.md)**，字段换算见 **[docs/trade/实现映射说明.md](docs/trade/实现映射说明.md)**。
 
 **当前已可完整演示**：扫码溯源 → 商品检索 → 加购下单 → 支付发货收货 → 评价 → 认证审核 → 预警处置 → 监管回溯。
 
@@ -211,7 +213,7 @@ python -m uvicorn app.main:app --reload
 │   ├── ISSUE_TEMPLATE/     # 任务 / 缺陷模板
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── app/
-│   ├── core/               # 公共基础：配置、异常、响应、鉴权、雪花号
+│   ├── core/               # 公共基础：配置、异常、响应、鉴权、RBAC、雪花号
 │   ├── db/                 # 引擎/会话、建表、种子数据
 │   ├── common/             # 跨域最小契约：User、Farm、Role
 │   ├── trace/              # 溯源链域：models/schemas/service/chain/router/二维码
@@ -221,8 +223,9 @@ python -m uvicorn app.main:app --reload
 │   ├── web/                # 页面路由、模板骨架与统一渲染上下文
 │   └── main.py             # 应用入口、中间件、异常处理器、页面路由
 ├── docs/
-│   ├── use-cases/          # UC-01～UC-05 用例规格
+│   ├── use-cases/          # UC-01～UC-10 用例规格
 │   ├── 分支整合说明.md      # 三分支功能对照、依赖、冲突处理与验证
+│   ├── trade/              # 交易域设计/接口/数据库文档 + 与实现的字段映射
 │   ├── 接口文档.md
 │   ├── 数据库设计.md
 │   ├── 设计说明.md          # 类图/顺序图（PlantUML）
@@ -231,14 +234,14 @@ python -m uvicorn app.main:app --reload
 │   └── 测试说明.md
 ├── sql/schema_mysql.sql    # 生产 DDL + 只追加权限示例
 ├── scripts/                # bootstrap / seed / smoke
-└── tests/                  # 79 个用例：链路、并发、交易、运营、页面
+└── tests/                  # 85 个用例：链路、并发、交易、运营、RBAC、页面
 ```
 
 ## 测试与质量
 
 ```bash
 ruff check .            # 静态检查
-pytest -q               # 79 passed
+pytest -q               # 85 passed
 bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 ```
 
@@ -249,6 +252,7 @@ bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 - 业务规则：重复建档 409、越权 403、状态机禁止回退、赋码幂等与上限、作废码 410；
 - 交易域：超卖拦截、支付幂等与重试上限、取消释放库存、评价前置条件、结批批次不可售；
 - 运营域：BR-07 单份在途、BR-08 结论不可改、报告过期驳回、看板口径、断链/倒挂自动预警、监管回溯留痕；
+- RBAC：16 个权限点的最小权限、权限点跨角色复用、越权消息可定位；
 - 页面：扫码页渲染、断链告警条、码不存在 404、控制台按角色收敛数据。
 
 ## 团队与纵向分工
@@ -262,7 +266,9 @@ bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
 | 李×× | 交易域 | UC-06～UC-10 | `app/trade` | `feat/trade` |
 | 王×× | 用户与运营域 | UC-11～UC-15 | `app/account`、`app/ops` | `feat/identity-ops` |
 
-三域汇总在 `feat/integrate`，整合说明见 [`docs/分支整合说明.md`](docs/分支整合说明.md)。
+三域汇总在 `feat/integrate`；`feat/identity-ops` 的权限矩阵已并入公共基础（`app/core/rbac.py`），
+其历史被强推、与本仓库无共同祖先，故采用文件级复用而非 merge。
+整合说明见 [`docs/分支整合说明.md`](docs/分支整合说明.md)。
 
 详细阶段产出物与报告章节对应见 [`docs/分工与协作说明.md`](docs/分工与协作说明.md)。
 
