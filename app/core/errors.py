@@ -61,5 +61,6 @@ class Unauthenticated(BizError):
 
 
 class Forbidden(BizError):
-    def __init__(self, message: str = "权限不足") -> None:
-        super().__init__(ErrorCode.FORBIDDEN, message, 403)
+    def __init__(self, message: str = "权限不足", data: Any = None) -> None:
+        # data 用于回传「缺少哪个权限点」，便于排查越权（兼容 RBAC 矩阵模块）
+        super().__init__(ErrorCode.FORBIDDEN, message, 403, data)

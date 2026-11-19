@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.common.models import Role, User
 from app.core.config import settings
-from app.core.deps import get_session, require_roles
+from app.core.deps import get_session, require_permission, require_roles
 from app.core.response import ok, page
 from app.ops.schemas import AlertHandle, CertReview, CertSubmit, RegulatorAction
 from app.ops.service import AlertService, CertService, DashboardService, RegulatorService
@@ -58,7 +58,8 @@ def review_cert(
     app_id: str,
     payload: CertReview,
     db: Session = Depends(get_session),
-    user: User = Depends(require_roles(Role.OPERATOR)),
+    # 用 RBAC 权限点而非角色元组：矩阵里 cert:review 只授予平台运营
+    user: User = Depends(require_permission("cert:review")),
 ):
     return ok(CertService.review(db, user, app_id, payload), message="审核结论已提交")
 
@@ -117,7 +118,7 @@ def handle_alert(
     alert_id: str,
     payload: AlertHandle,
     db: Session = Depends(get_session),
-    user: User = Depends(require_roles(Role.OPERATOR)),
+    user: User = Depends(require_permission("alert:dispose")),
 ):
     return ok(
         AlertService.handle(db, user, alert_id, payload.status, payload.note),

@@ -47,6 +47,23 @@ def get_optional_user(
     return db.get(User, payload.get("sub", ""))
 
 
+def require_permission(permission: str) -> Callable[..., User]:
+    """按 RBAC 权限点守卫（来自 feat/identity-ops 的权限矩阵）。
+
+    与 require_roles 的分工：require_roles 表达「哪些角色能用」，
+    require_permission 表达「需要哪个业务能力」，后者在权限点复用
+    （如 cert:read:all 同时给运营与监管）时不会写重复的角色元组。
+    """
+
+    def _guard(user: User = Depends(get_current_user)) -> User:
+        from app.core.rbac import ensure
+
+        ensure(user.role, permission)
+        return user
+
+    return _guard
+
+
 def require_roles(*roles: str) -> Callable[..., User]:
     """角色守卫工厂：require_roles(Role.FARMER) → 依赖函数。"""
 
