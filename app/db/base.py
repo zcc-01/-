@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
@@ -32,6 +33,10 @@ class TimestampMixin:
 _connect_args: dict = {}
 if settings.is_sqlite:
     _connect_args = {"check_same_thread": False, "timeout": 30}
+    # 全新克隆的仓库里 data/ 目录可能不存在，SQLite 不会自动建目录，
+    # 直接连会报 "unable to open database file"（CI 上就是这么挂的）。
+    _sqlite_file = settings.database_url.replace("sqlite:///", "", 1).split("?", 1)[0]
+    Path(_sqlite_file).expanduser().parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(
     settings.database_url,

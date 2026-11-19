@@ -43,4 +43,6 @@ jobs:
             if curl -sf http://127.0.0.1:8000/api/health > /dev/null; then break; fi
           done
           curl -sf http://127.0.0.1:8000/api/health
-          curl -sf http://127.0.0.1:8000/api/trace/PC-20251101-DEMO-ITM0001 | head -c 200
+          # 注意：不要 pipe 到 head，提前关闭管道会让 curl 以 23 退出导致步骤失败
+          curl -sf http://127.0.0.1:8000/api/trace/PC-20251101-DEMO-ITM0001 -o /tmp/trace.json
+          python -c "import json;d=json.load(open('/tmp/trace.json'));assert d['data']['chain']['ok'] and len(d['data']['events'])==5;print('scan ok, events:',len(d['data']['events']))"
