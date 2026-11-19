@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ data.batch.crop_name }} · 溯源档案</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <span class="brand">田间码</span>
+    <span class="sub">农产品溯源与产地直供平台</span>
+  </div>
+</header>
+
+<main class="wrap">
+  {% if not data.chain.ok %}
+  <div class="alert-warn" role="alert">
+    <strong>该产品溯源信息存在异常，已提交平台复核</strong>
+    <span>{{ data.chain.message }}</span>
+  </div>
+  {% endif %}
+
+  <section class="card hero">
+    <div class="hero-main">
+      <h1>{{ data.batch.crop_name }}</h1>
+      <p class="muted">批次号 {{ data.batch.batch_no }} · 地块 {{ data.batch.plot_no }}</p>
+      <p class="farm">
+        {{ data.farm.province }}{{ data.farm.city }} · {{ data.farm.farm_name }}
+        {% if data.farm.cert_status == 'approved' %}
+          <span class="badge ok">产地已认证</span>
+        {% else %}
+          <span class="badge">认证审核中</span>
+        {% endif %}
+      </p>
+    </div>
+    <div class="evidence">
+      <div class="evidence-row">
+        <span class="label">溯源码</span>
+        <code>{{ data.code_value }}</code>
+      </div>
+      <div class="evidence-row">
+        <span class="label">码类型</span>
+        <span>{{ '单品码' if data.code_type == 'item' else '批次码' }}</span>
+      </div>
+      <div class="evidence-row">
+        <span class="label">链校验</span>
+        {% if data.chain.ok %}
+          <span class="badge ok">完整 · {{ data.chain.total }} 条</span>
+        {% else %}
+          <span class="badge bad">异常 · 第 {{ data.chain.broken_at }} 条</span>
+        {% endif %}
+      </div>
+      <div class="evidence-row">
+        <span class="label">采收日期</span>
+        <span>{{ data.batch.harvest_date }}</span>
+      </div>
+    </div>
+  </section>
+
+  <p class="note">{{ data.scope_note }}</p>
+
+  <section class="card">
+    <h2>生产履历</h2>
+    <ol class="timeline">
+      {% for e in data.events %}
+      <li>
+        <div class="dot"></div>
+        <div class="tl-body">
+          <div class="tl-head">
+            <span class="stage">{{ e.stage_label }}</span>
+            <time>{{ e.occurred_at.strftime('%Y-%m-%d %H:%M') }}</time>
+            <span class="muted">记录人 {{ e.operator_name }}</span>
+          </div>
+          {% if e.location %}<p class="muted">地点：{{ e.location }}</p>{% endif %}
+          {% if e.detail %}
+          <div class="detail">
+            {% for k, v in e.detail.items() %}
+            <span class="kv"><b>{{ k }}</b>：{{ v }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <code class="hash">#{{ e.seq_no }} {{ e.curr_hash[:16] }}…</code>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="card explain">
+    <h2>这份履历为什么可信</h2>
+    <p>每条记录都保存了前一条记录的摘要，并用 SHA-256 重新计算本条摘要。任何一条记录被改动，
+      它与后续记录的链接就会失配，校验可以精确定位到第几条——这就是上面的「链校验」结论的来源。</p>
+    <p class="muted">最近一次校验：{{ data.chain.checked_at }}</p>
+  </section>
+</main>
+
+<footer class="wrap footer">
+  <span>{{ app_name }}</span>
+  <span>扫码信息仅供参考，检测报告以出具机构为准</span>
+</footer>
+</body>
+</html>

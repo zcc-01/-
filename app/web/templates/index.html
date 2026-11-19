@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ app_name }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <span class="brand">田间码</span>
+    <span class="sub">{{ app_name }}</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card hero">
+    <div class="hero-main">
+      <h1>扫码即见，从田间到餐桌</h1>
+      <p class="muted">一物一码 · 哈希链存证 · 产地直供</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>演示入口</h2>
+    <ul class="links">
+      <li><a href="/docs">接口文档（Swagger UI）</a><span class="muted">所有溯源接口可在此调试</span></li>
+      <li><a href="/api/health">健康检查</a><span class="muted">/api/health</span></li>
+      <li><a href="/trace/PC-20251101-DEMO-ITM0001">扫码溯源示例</a><span class="muted">种子批次的单品码</span></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>链路环节</h2>
+    <div class="chips">
+      {% for key, label in stage_labels.items() %}
+      <span class="chip">{{ label }}<code>{{ key }}</code></span>
+      {% endfor %}
+    </div>
+    <p class="muted">每条环节记录按 seq_no 递增串入哈希链，任何一条被改动都能定位到序号。</p>
+  </section>
+
+  <section class="card">
+    <h2>演示账号</h2>
+    <p class="muted">口令统一为 <code>Passw0rd!</code>，执行 <code>python scripts/seed.py</code> 后可用。</p>
+    <div class="chips">
+      <span class="chip">农户<code>farmer01</code></span>
+      <span class="chip">平台运营<code>operator01</code></span>
+      <span class="chip">监管<code>regulator01</code></span>
+      <span class="chip">消费者<code>consumer01</code></span>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap footer">
+  <span>高级软件工程课程项目 · 溯源链域</span>
+</footer>
+</body>
+</html>
