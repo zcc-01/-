@@ -1,33 +1,100 @@
 {% extends "base.html" %}
 
-{% block title %}{{ app_name }}{% endblock %}
-{% block subtitle %}{{ app_name }}{% endblock %}
+{% block title %}{{ app_name }} · 产地直供{% endblock %}
+{% block subtitle %}产地直供 · 一物一码{% endblock %}
 
 {% block content %}
-  <section class="card hero">
-    <div class="hero-main">
+  <section class="banner">
+    <div class="banner-text">
       <h1>扫码即见，从田间到餐桌</h1>
-      <p class="muted">一物一码 · 哈希链存证 · 产地直供</p>
+      <p>一物一码 · 哈希链存证 · 产地认证 · 直供到家</p>
     </div>
+    <div class="banner-dots"><i class="on"></i><i></i><i></i><i></i></div>
   </section>
 
-  <section class="card">
-    <h2>演示入口</h2>
-    <ul class="links">
-      <li><a href="/docs">接口文档（Swagger UI）</a><span class="muted">所有溯源接口可在此调试</span></li>
-      <li><a href="/api/health">健康检查</a><span class="muted">/api/health</span></li>
-      <li><a href="/trace/PC-20251101-DEMO-ITM0001">扫码溯源示例</a><span class="muted">种子批次的单品码</span></li>
-    </ul>
-  </section>
+  <div class="notice">
+    <strong>公告</strong>
+    <span>平台已接入 {{ product_total }} 件产地直供商品，全部支持扫码查看生产履历；认证产地商品带「产地已认证」标识。</span>
+  </div>
 
   <section class="card">
-    <h2>链路环节</h2>
-    <div class="chips">
-      {% for key, label in stage_labels.items() %}
-      <span class="chip">{{ label }}<code>{{ key }}</code></span>
+    <div class="section-head">
+      <h2>商品推荐</h2>
+      <a class="more" href="/shop">更多 &gt;</a>
+    </div>
+
+    {% if categories %}
+    <div class="tabs">
+      <a class="active" href="/shop">全部</a>
+      {% for c in categories %}
+      <a href="/shop?category={{ c|urlencode }}">{{ c }}</a>
       {% endfor %}
     </div>
-    <p class="muted">每条环节记录按 seq_no 递增串入哈希链，任何一条被改动都能定位到序号。</p>
+    {% endif %}
+
+    {% if featured %}
+    <div class="grid">
+      {% for p in featured %}
+      <div class="product-card">
+        <a href="/shop/{{ p.product_id }}" style="text-decoration:none;">
+          <div class="thumb {{ 'tea' if '茶' in p.name else ('nut' if '核桃' in p.name else 'fruit') }}">{{ p.category[:1] }}</div>
+        </a>
+        <h3><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></h3>
+        <div class="muted" style="font-size:13px;">
+          {{ p.category }}
+          {% if p.certified %}<span class="tag ok">产地已认证</span>{% endif %}
+        </div>
+        <div class="price">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
+        <div class="muted" style="font-size:13px;">库存 {{ p.stock }} · 已售 {{ p.sales_count }}</div>
+        <div style="margin-top:auto;display:flex;gap:8px;">
+          <a class="btn btn-sm btn-ghost" href="/shop/{{ p.product_id }}">查看详情</a>
+          <a class="btn btn-sm" href="/shop/{{ p.product_id }}">立即购买</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">还没有上架商品。农户登录后可上架已采收批次的商品。</p>
+    {% endif %}
+  </section>
+
+  {% if certified %}
+  <section class="card">
+    <div class="section-head">
+      <h2>认证产地 · 销量优先</h2>
+      <a class="more" href="/shop?certified_only=1">更多 &gt;</a>
+    </div>
+    <div class="grid">
+      {% for p in certified %}
+      <div class="product-card">
+        <h3><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></h3>
+        <div class="muted" style="font-size:13px;"><span class="tag ok">产地已认证</span> 已售 {{ p.sales_count }}</div>
+        <div class="price">￥{{ '%.2f'|format(p.price) }} <small>/ {{ p.unit }}</small></div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>平台能力</h2>
+    <div class="grid">
+      <div class="product-card">
+        <h3>溯源链域</h3>
+        <p class="muted" style="font-size:13px;margin:0;">批次建档、环节上链、赋码、扫码查询与完整性校验（UC-01～UC-05）。</p>
+        <a class="btn btn-sm btn-ghost" href="/trace/PC-20251101-DEMO-ITM0001">打开溯源档案</a>
+      </div>
+      <div class="product-card">
+        <h3>交易域</h3>
+        <p class="muted" style="font-size:13px;margin:0;">商品检索、加购、下单、支付、发货收货与评价（UC-06～UC-10）。</p>
+        <a class="btn btn-sm btn-ghost" href="/cart">购物车</a>
+      </div>
+      <div class="product-card">
+        <h3>用户与运营域</h3>
+        <p class="muted" style="font-size:13px;margin:0;">登录鉴权、产地认证审核、经营看板与异常预警（UC-11～UC-15）。</p>
+        <a class="btn btn-sm btn-ghost" href="/console">运营控制台</a>
+      </div>
+    </div>
   </section>
 
   <section class="card">
@@ -43,5 +110,5 @@
 {% endblock %}
 
 {% block footer %}
-  <span>高级软件工程课程项目 · 溯源链域</span>
+  <span>高级软件工程课程项目 · 溯源链域 / 交易域 / 用户与运营域</span>
 {% endblock %}

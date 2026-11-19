@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}我的订单 · {{ app_name }}{% endblock %}
+{% block subtitle %}交易与订单{% endblock %}
+
+{% block content %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+
+  <section class="card">
+    <h2>订单列表 <span class="muted" style="font-size:14px;font-weight:400;">共 {{ total }} 笔</span></h2>
+
+    <div class="chips" style="margin-bottom:8px;">
+      <a class="chip" href="/orders">全部</a>
+      {% for key, label in status_labels.items() %}
+      <a class="chip" href="/orders?status={{ key }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+
+    {% if orders %}
+    {% for o in orders %}
+    <div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <code>{{ o.order_no }}</code>
+          <span class="tag {% if o.status == 'paid' %}ok{% elif o.status == 'cancelled' %}bad{% elif o.status == 'pending' %}warn{% endif %}">{{ o.status_label }}</span>
+        </div>
+        <div class="muted" style="font-size:13px;">{{ o.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="table">
+          <tbody>
+            {% for it in o.items %}
+            <tr>
+              <td>{{ it.product_name }}</td>
+              <td class="num">￥{{ '%.2f'|format(it.price) }} × {{ it.quantity }}</td>
+              <td class="num">￥{{ '%.2f'|format(it.subtotal) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;flex-wrap:wrap;gap:10px;">
+        <div class="muted" style="font-size:13px;">
+          收货：{{ o.receiver_name }} {{ o.receiver_phone_masked }} · {{ o.address }}
+          {% if o.last_fail_reason %}<br />上次支付失败：{{ o.last_fail_reason }}（已尝试 {{ o.pay_attempts }} 次）{% endif %}
+          {% if o.cancel_reason %}<br />{{ o.cancel_reason }}{% endif %}
+        </div>
+        <div>
+          <span class="price" style="font-size:16px;">￥{{ '%.2f'|format(o.total) }}</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        {% if o.status == 'pending' %}
+        <form class="btn-inline" method="post" action="/orders/{{ o.order_id }}/pay" style="margin:0;">
+          <button class="btn btn-sm" type="submit">立即支付</button>
+        </form>
+        <form class="btn-inline" method="post" action="/orders/{{ o.order_id }}/cancel" style="margin:0;">
+          <button class="btn btn-sm btn-danger" type="submit">取消订单</button>
+        </form>
+        {% elif o.status == 'paid' %}
+          {% if can_ship %}
+          <form class="btn-inline" method="post" action="/orders/{{ o.order_id }}/ship" style="margin:0;">
+            <button class="btn btn-sm" type="submit">发货</button>
+          </form>
+          {% endif %}
+          <form class="btn-inline" method="post" action="/orders/{{ o.order_id }}/cancel" style="margin:0;">
+            <button class="btn btn-sm btn-danger" type="submit">取消并退款</button>
+          </form>
+        {% elif o.status == 'shipped' %}
+          <form class="btn-inline" method="post" action="/orders/{{ o.order_id }}/receive" style="margin:0;">
+            <button class="btn btn-sm" type="submit">确认收货</button>
+          </form>
+        {% elif o.status == 'received' %}
+          <form method="post" action="/orders/{{ o.order_id }}/review" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select name="product_id" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;">
+              {% for it in o.items %}
+              <option value="{{ it.product_id }}">{{ it.product_name }}</option>
+              {% endfor %}
+            </select>
+            <select name="rating" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;">
+              <option value="5">5 星</option><option value="4">4 星</option>
+              <option value="3">3 星</option><option value="2">2 星</option><option value="1">1 星</option>
+            </select>
+            <input name="content" placeholder="说说体验" maxlength="1000"
+                   style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;min-width:180px;" />
+            <button class="btn btn-sm" type="submit">评价</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p class="empty">还没有订单。<a href="/shop">去选购</a></p>
+    {% endif %}
+  </section>
+
+  <p><a class="btn btn-ghost" href="/shop">← 返回商城</a></p>
+{% endblock %}

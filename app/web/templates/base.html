@@ -9,7 +9,8 @@
   可覆盖的 block：
     title       —— head 里的标题，默认 app_name
     head_extra  —— 追加 head 内的标签（额外 CSS / meta）
-    subtitle    —— 顶部栏副标题
+    subtitle    —— 二级菜单右侧的说明文字
+    nav         —— 顶部主菜单（默认给三个业务域入口）
     alert       —— 主体上方的告警条（如断链提示）
     content     —— 页面主体，必填
     footer      —— 页脚内容
@@ -30,8 +31,31 @@
 <body>
 <header class="topbar">
   <div class="wrap">
-    <span class="brand">田间码</span>
-    <span class="sub">{% block subtitle %}农产品溯源与产地直供平台{% endblock %}</span>
+    <div class="topbar-main">
+      <a class="brand-lg" href="/">{{ app_name }}</a>
+      <div class="topbar-links">
+        <a href="/shop">客服留言</a>
+        {% if nav_user %}
+        <span class="nav-user">{{ nav_user.display_name or nav_user.username }}</span>
+        <a href="/logout">退出</a>
+        {% else %}
+        <a href="/login">登录 / 注册</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <nav class="topbar-menu">
+      {% block nav %}
+      {% set path = request.url.path if request else '/' %}
+      <a href="/" class="{% if path == '/' %}active{% endif %}">首页</a>
+      <a href="/shop" class="{% if path.startswith('/shop') %}active{% endif %}">商品信息</a>
+      <a href="/cart" class="{% if path.startswith('/cart') %}active{% endif %}">购物车</a>
+      <a href="/orders" class="{% if path.startswith('/orders') %}active{% endif %}">我的订单</a>
+      <a href="/console" class="{% if path.startswith('/console') %}active{% endif %}">运营控制台</a>
+      <a href="/docs" class="{% if path.startswith('/docs') %}active{% endif %}">开放接口</a>
+      {% endblock %}
+      <span class="muted" style="margin-left:auto;font-size:13px;">{% block subtitle %}产地直供 · 一物一码{% endblock %}</span>
+    </nav>
   </div>
 </header>
 

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}运营控制台 · {{ app_name }}{% endblock %}
+{% block subtitle %}运营控制台{% endblock %}
+
+{% block content %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+
+  <div class="admin">
+    <aside class="admin-side">
+      <div class="who">
+        {% if nav_user %}
+        欢迎 {{ nav_user.display_name or nav_user.username }}<br />
+        <span>{{ '全平台视角' if summary.scope == 'platform' else '本农场视角' }}</span>
+        {% else %}未登录{% endif %}
+      </div>
+      <a href="#dashboard" class="active">经营看板</a>
+      <a href="#products">商品管理</a>
+      <a href="#orders">订单管理</a>
+      <a href="#certs">认证审核{% if summary.pending_cert %}（{{ summary.pending_cert }}）{% endif %}</a>
+      <a href="#alerts">异常预警{% if summary.open_alert %}（{{ summary.open_alert }}）{% endif %}</a>
+      <a href="/shop">返回前台</a>
+    </aside>
+
+    <div class="admin-main">
+      <section class="card" id="dashboard">
+        <div class="section-head">
+          <h2>经营数据看板</h2>
+          <span class="muted" style="margin-left:auto;font-size:13px;">
+            {{ '全平台口径' if summary.scope == 'platform' else '本农场口径' }}
+          </span>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="k">溯源批次</div><div class="v">{{ summary.batch_total }}</div></div>
+          <div class="stat"><div class="k">环节记录</div><div class="v">{{ summary.event_total }}</div></div>
+          <div class="stat"><div class="k">扫码次数</div><div class="v">{{ summary.scan_total }}</div></div>
+          <div class="stat"><div class="k">在售商品</div><div class="v">{{ summary.product_total }}</div></div>
+          <div class="stat"><div class="k">订单总数</div><div class="v">{{ summary.order_total }}</div></div>
+          <div class="stat"><div class="k">已支付订单</div><div class="v">{{ summary.order_paid }}</div></div>
+          <div class="stat"><div class="k">成交额</div><div class="v">￥{{ '%.2f'|format(summary.gmv) }}</div></div>
+          <div class="stat"><div class="k">待审认证</div><div class="v">{{ summary.pending_cert }}</div></div>
+          <div class="stat"><div class="k">未关闭预警</div><div class="v">{{ summary.open_alert }}</div></div>
+        </div>
+
+        {% if summary.order_by_status %}
+        <h3 style="margin-top:18px;font-size:15px;">订单状态分布</h3>
+        <div class="chips">
+          {% for k, v in summary.order_by_status.items() %}
+          <span class="chip">{{ k }}<code>{{ v }}</code></span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+
+      <section class="card" id="products">
+        <div class="section-head">
+          <h2>商品管理</h2>
+          <a class="more" href="/shop">前台查看 &gt;</a>
+        </div>
+        {% if products %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>序号</th><th>商品名称</th><th>类目</th><th class="num">价格</th>
+                <th class="num">库存</th><th class="num">销量</th><th>认证</th><th>状态</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in products %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td><a href="/shop/{{ p.product_id }}">{{ p.name }}</a></td>
+                <td>{{ p.category }}</td>
+                <td class="num">￥{{ '%.2f'|format(p.price) }}</td>
+                <td class="num">{{ p.stock }}</td>
+                <td class="num">{{ p.sales_count }}</td>
+                <td>{% if p.certified %}<span class="tag ok">已认证</span>{% else %}<span class="tag">未认证</span>{% endif %}</td>
+                <td>
+                  {% if p.status == 'on_sale' %}<span class="tag ok">{{ p.status_label }}</span>
+                  {% else %}<span class="tag">{{ p.status_label }}</span>{% endif %}
+                </td>
+                <td><a href="/shop/{{ p.product_id }}">详情</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty">暂无商品。农户在批次采收后即可上架。</p>
+        {% endif %}
+      </section>
+
+      <section class="card" id="orders">
+        <div class="section-head">
+          <h2>订单管理</h2>
+          <a class="more" href="/orders">全部订单 &gt;</a>
+        </div>
+        {% if orders %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>订单号</th><th>商品</th><th class="num">金额</th><th>收货人</th><th>状态</th><th>下单时间</th></tr>
+            </thead>
+            <tbody>
+              {% for o in orders %}
+              <tr>
+                <td><code>{{ o.order_no }}</code></td>
+                <td>
+                  {% for it in o.items %}
+                  {{ it.product_name }} × {{ it.quantity }}{% if not loop.last %}<br />{% endif %}
+                  {% endfor %}
+                </td>
+                <td class="num">￥{{ '%.2f'|format(o.total) }}</td>
+                <td>{{ o.receiver_name }}</td>
+                <td><span class="tag {% if o.status == 'paid' %}ok{% elif o.status == 'cancelled' %}bad{% elif o.status == 'pending' %}warn{% endif %}">{{ o.status_label }}</span></td>
+                <td>{{ o.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty">暂无订单。</p>
+        {% endif %}
+      </section>
+
+      <section class="card" id="certs">
+        <div class="section-head"><h2>认证审核</h2></div>
+        {% if pending_certs %}
+          {% for c in pending_certs %}
+          <div style="border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px;">
+            <div><code>{{ c.app_no }}</code> <span class="tag warn">{{ c.status_label }}</span></div>
+            <div class="muted" style="font-size:13px;margin-top:4px;">
+              产地 {{ c.farm_name }} · 土地证明 {{ c.land_cert_no or '未提供' }} · 检测报告 {{ c.report_no or '未提供' }}
+              {% if c.report_expire_at %}（有效期至 {{ c.report_expire_at.strftime('%Y-%m-%d') }}）{% endif %}
+            </div>
+            <form method="post" action="/console/certs/{{ c.app_id }}/review"
+                  style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <input name="comment" placeholder="审核意见（驳回必填）" maxlength="500"
+                     style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;" />
+              <button class="btn btn-sm" name="decision" value="approve" type="submit">通过</button>
+              <button class="btn btn-sm btn-danger" name="decision" value="reject" type="submit">驳回</button>
+            </form>
+          </div>
+          {% endfor %}
+        {% else %}
+        <p class="empty">
+          {% if is_operator %}暂无待审核申请。{% else %}认证申请由平台运营审核，农户提交后在「认证审核」查看进度。{% endif %}
+        </p>
+        {% endif %}
+      </section>
+
+      <section class="card" id="alerts">
+        <div class="section-head"><h2>异常预警</h2></div>
+        {% if alerts %}
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>单号</th><th>类型</th><th>级别</th><th>对象</th><th>状态</th><th>操作</th></tr>
+            </thead>
+            <tbody>
+              {% for a in alerts %}
+              <tr>
+                <td><code>{{ a.alert_no }}</code></td>
+                <td>{{ a.alert_type_label }}</td>
+                <td>
+                  <span class="tag {% if a.level == 'critical' %}bad{% elif a.level == 'warn' %}warn{% endif %}">{{ a.level_label }}</span>
+                </td>
+                <td>
+                  {{ a.title }}
+                  {% if a.code_value %}<br /><a href="/trace/{{ a.code_value }}" style="font-size:13px;">查看溯源</a>{% endif %}
+                </td>
+                <td><span class="tag {% if a.status == 'closed' %}ok{% elif a.status == 'open' %}warn{% endif %}">{{ a.status_label }}</span></td>
+                <td>
+                  {% if is_operator and a.status != 'closed' %}
+                  <form method="post" action="/console/alerts/{{ a.alert_id }}/handle" style="margin:0;display:flex;gap:6px;">
+                    <input name="note" placeholder="处置说明" maxlength="500"
+                           style="width:130px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;" />
+                    <button class="btn btn-sm btn-ghost" name="status" value="processing" type="submit">处理中</button>
+                    <button class="btn btn-sm" name="status" value="closed" type="submit">关闭</button>
+                  </form>
+                  {% else %}
+                  <span class="muted" style="font-size:13px;">{{ a.handle_note or '—' }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="empty">暂无预警单。断链扫码或环节时间倒挂会自动生成。</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endblock %}

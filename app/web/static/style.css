@@ -154,3 +154,432 @@ a:hover { text-decoration: underline; }
 }
 
 .explain p { font-size: 14px; color: #37453c; }
+
+/* ==========================================================================
+   三域整合后新增：交易与运营页面共用的原子样式
+   只补充原有 style.css 没有的部分，不改动上面已有的类，避免破坏扫码页。
+   ========================================================================== */
+
+/* --- 商品网格 --- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color .15s ease, transform .15s ease;
+}
+
+.product-card:hover {
+  border-color: #c8d6cc;
+  transform: translateY(-1px);
+}
+
+.product-card h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.product-card h3 a { color: var(--text); text-decoration: none; }
+.product-card h3 a:hover { color: var(--green); }
+
+.price {
+  color: var(--red);
+  font-weight: 600;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+
+.price small { font-size: 12px; font-weight: 400; color: var(--muted); }
+
+/* --- 表单 --- */
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.form-row label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.form-row input,
+.form-row select,
+.form-row textarea {
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #fff;
+  color: var(--text);
+}
+
+.form-row input:focus,
+.form-row select:focus,
+.form-row textarea:focus {
+  outline: 2px solid var(--green-soft);
+  border-color: var(--green);
+}
+
+.form-inline {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.form-inline .form-row { margin-bottom: 0; }
+
+/* --- 表格 --- */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover { background: #fafbfa; }
+
+.table td.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+/* --- 按钮变体 --- */
+.btn-sm {
+  padding: 5px 11px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--green);
+  border: 1px solid var(--line);
+}
+
+.btn-ghost:hover { background: var(--green-soft); }
+
+.btn-danger {
+  background: var(--red-soft);
+  color: var(--red);
+  border: 1px solid #f0cccc;
+}
+
+.btn[disabled],
+.btn.disabled {
+  opacity: .45;
+  pointer-events: none;
+}
+
+/* 表单内联按钮（不撑破布局） */
+.btn-inline {
+  display: inline-block;
+  margin-right: 6px;
+}
+
+/* --- 看板指标 --- */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.stat .k {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.stat .v {
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.stat .v small { font-size: 13px; font-weight: 400; color: var(--muted); }
+
+/* --- 状态色 --- */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: #eef1ef;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.tag.ok { background: var(--green-soft); color: var(--green); }
+.tag.warn { background: var(--amber-soft); color: var(--amber); }
+.tag.bad { background: var(--red-soft); color: var(--red); }
+
+/* --- 提示条 --- */
+.flash {
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1px solid #cfe6d8;
+}
+
+.flash.error {
+  background: var(--red-soft);
+  color: var(--red);
+  border-color: #f0cccc;
+}
+
+/* --- 分页 --- */
+.pager {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* --- 移动端：表格横向滚动而不撑破页面 --- */
+@media (max-width: 640px) {
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+}
+
+/* --- 顶栏导航（三域统一入口） --- */
+.topbar .wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  color: var(--text);
+  text-decoration: none;
+  padding: 2px 0;
+  border-bottom: 1px solid transparent;
+}
+
+.nav a:hover {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.nav-user {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 8px;
+  background: #eef1ef;
+  border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+  .topbar .wrap { gap: 8px; }
+  .nav { margin-left: 0; width: 100%; gap: 10px; font-size: 13px; }
+}
+
+/* ==========================================================================
+   参考「崂山绿茶产地直供平台」与供应商后台的版式改造
+   - 前台：双层顶栏 + 横幅 + 分类推荐 + 排序标签
+   - 后台：左侧竖排菜单 + 右侧数据表格
+   ========================================================================== */
+
+/* --- 双层顶栏 --- */
+.topbar { background: #fff; border-bottom: 1px solid var(--line); }
+.topbar-main {
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 0 8px;
+}
+.brand-lg {
+  font-size: 21px; font-weight: 700; letter-spacing: .5px; color: var(--text);
+  text-decoration: none;
+}
+.topbar-links { margin-left: auto; display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
+.topbar-links a { color: var(--muted); text-decoration: none; }
+.topbar-links a:hover { color: var(--green); }
+
+.topbar-menu {
+  border-top: 1px solid var(--line);
+  display: flex; gap: 26px; padding: 8px 0;
+  font-size: 15px;
+}
+.topbar-menu a {
+  color: var(--text); text-decoration: none; padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+}
+.topbar-menu a:hover { color: var(--green); }
+.topbar-menu a.active { font-weight: 600; border-bottom-color: var(--green); }
+
+/* --- 首页横幅：用渐变模拟实景大图，避免外链资源 --- */
+.banner {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  min-height: 230px;
+  display: flex; align-items: flex-end;
+  background:
+    radial-gradient(120% 90% at 78% 18%, #ffd9a8 0%, #ffb27a 26%, transparent 60%),
+    linear-gradient(180deg, #7fb6d9 0%, #a9cfe0 38%, #6f9f7a 62%, #3f6b4b 100%);
+  box-shadow: inset 0 -60px 90px -40px rgba(0,0,0,.35);
+}
+.banner-text { padding: 26px 30px; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.45); }
+.banner-text h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: 1px; }
+.banner-text p { margin: 0; font-size: 14px; opacity: .95; }
+.banner-dots {
+  position: absolute; right: 18px; bottom: 14px;
+  display: flex; gap: 6px;
+}
+.banner-dots i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: rgba(255,255,255,.55); display: block;
+}
+.banner-dots i.on { background: #fff; }
+
+/* --- 公告条 --- */
+.notice {
+  display: flex; gap: 10px; align-items: center;
+  background: #fffdf3; border: 1px solid #f0e7c8;
+  border-radius: 10px; padding: 9px 14px; font-size: 13px; color: #8a6d3b;
+  margin-top: 14px;
+}
+.notice strong { color: #7a5c25; }
+
+/* --- 分区标题（左侧色块 + 更多） --- */
+.section-head {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 4px;
+}
+.section-head h2 { margin: 0; font-size: 18px; }
+.section-head .more { margin-left: auto; font-size: 13px; }
+
+/* --- 分类标签页 --- */
+.tabs {
+  display: flex; gap: 22px; border-bottom: 1px solid var(--line);
+  margin: 12px 0 4px; font-size: 15px;
+}
+.tabs a {
+  color: var(--muted); text-decoration: none; padding: 8px 2px;
+  border-bottom: 2px solid transparent;
+}
+.tabs a:hover { color: var(--green); }
+.tabs a.active { color: var(--text); font-weight: 600; border-bottom-color: var(--green); }
+
+/* --- 排序条 --- */
+.sortbar {
+  display: flex; gap: 20px; align-items: center;
+  background: #fffdf3; border: 1px solid #f2ecd8;
+  border-radius: 8px; padding: 8px 14px; font-size: 13px;
+  margin: 10px 0;
+}
+.sortbar a { color: var(--muted); text-decoration: none; }
+.sortbar a:hover { color: var(--green); }
+.sortbar a.active { color: var(--red); font-weight: 600; }
+
+/* --- 商品图占位（无实拍图时用色块 + 首字） --- */
+.thumb {
+  height: 130px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 700; color: #fff; letter-spacing: 2px;
+  background: linear-gradient(135deg, #9dbfa6, #6d9678);
+  user-select: none;
+}
+.thumb.tea { background: linear-gradient(135deg, #a8c8a0, #6f9a6d); }
+.thumb.nut { background: linear-gradient(135deg, #d8b98c, #a9824f); }
+.thumb.fruit { background: linear-gradient(135deg, #f0b892, #d97a4f); }
+
+/* --- 详情页属性表 --- */
+.attr-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+  background: #fffdf3; border: 1px solid #f2ecd8; border-radius: 10px;
+}
+.attr-table th, .attr-table td {
+  text-align: left; padding: 8px 12px; border-bottom: 1px solid #f2ecd8;
+  font-weight: 400;
+}
+.attr-table th { color: var(--muted); width: 84px; white-space: nowrap; }
+.attr-table tr:last-child th, .attr-table tr:last-child td { border-bottom: 0; }
+
+/* --- 数量步进器 --- */
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stepper button {
+  width: 30px; height: 30px; border: 0; background: #f5f6f5; cursor: pointer;
+  font-size: 16px; color: var(--text);
+}
+.stepper button:hover { background: var(--green-soft); }
+.stepper input {
+  width: 52px; height: 30px; border: 0; text-align: center; font-size: 14px;
+  border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+}
+
+/* --- 后台布局：左菜单 + 右内容 --- */
+.admin { display: grid; grid-template-columns: 176px 1fr; gap: 16px; margin-top: 16px; }
+.admin-side {
+  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  padding: 12px 10px; align-self: start; position: sticky; top: 12px;
+}
+.admin-side .who {
+  font-size: 12px; color: var(--muted); padding: 4px 8px 10px;
+  border-bottom: 1px dashed var(--line); margin-bottom: 8px;
+}
+.admin-side a {
+  display: block; padding: 9px 10px; border-radius: 9px;
+  color: var(--text); text-decoration: none; font-size: 14px;
+}
+.admin-side a:hover { background: var(--green-soft); color: var(--green); }
+.admin-side a.active { background: #f3f7f3; color: var(--green); font-weight: 600; }
+.admin-main { min-width: 0; }
+.admin-main > section + section { margin-top: 16px; }
+
+@media (max-width: 860px) {
+  .admin { grid-template-columns: 1fr; }
+  .admin-side { position: static; display: flex; gap: 6px; overflow-x: auto; }
+  .admin-side a { white-space: nowrap; }
+  .admin-side .who { display: none; }
+  .banner { min-height: 170px; }
+  .banner-text h1 { font-size: 20px; }
+  .topbar-menu { gap: 16px; font-size: 14px; overflow-x: auto; }
+}

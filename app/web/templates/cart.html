@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}购物车 · {{ app_name }}{% endblock %}
+{% block subtitle %}购物车{% endblock %}
+
+{% block content %}
+  {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+
+  <section class="card">
+    <h2>购物车</h2>
+
+    {% if cart.items %}
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>商品</th><th class="num">单价</th><th class="num">数量</th><th class="num">小计</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in cart.items %}
+          <tr>
+            <td>
+              <a href="/shop/{{ it.product_id }}">{{ it.name }}</a>
+              {% if it.over_stock %}<span class="tag bad">库存不足</span>{% endif %}
+              {% if it.status != 'on_sale' %}<span class="tag">已下架</span>{% endif %}
+            </td>
+            <td class="num">￥{{ '%.2f'|format(it.price) }}</td>
+            <td class="num">
+              <form method="post" action="/cart/{{ it.cart_id }}/update" style="display:inline-flex;gap:4px;align-items:center;">
+                <input name="quantity" type="number" min="1" max="{{ it.stock }}" value="{{ it.quantity }}"
+                       style="width:64px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;" />
+                <button class="btn btn-sm btn-ghost" type="submit">改</button>
+              </form>
+            </td>
+            <td class="num">￥{{ '%.2f'|format(it.subtotal) }}</td>
+            <td>
+              <form method="post" action="/cart/{{ it.cart_id }}/delete" style="margin:0;">
+                <button class="btn btn-sm btn-danger" type="submit">移除</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top:14px;font-size:17px;">
+      合计：<span class="price">￥{{ '%.2f'|format(cart.total) }}</span>
+    </p>
+
+    <h3 style="margin-top:22px;">填写收货信息并下单</h3>
+    <form method="post" action="/cart/checkout">
+      {% for it in cart.items %}
+      <input type="hidden" name="cart_ids" value="{{ it.cart_id }}" />
+      {% endfor %}
+      <div class="form-row">
+        <label for="receiver_name">收货人</label>
+        <input id="receiver_name" name="receiver_name" value="{{ default_name }}" required maxlength="32" />
+      </div>
+      <div class="form-row">
+        <label for="receiver_phone">手机号</label>
+        <input id="receiver_phone" name="receiver_phone" value="{{ default_phone }}" required maxlength="20" />
+      </div>
+      <div class="form-row">
+        <label for="address">收货地址</label>
+        <input id="address" name="address" value="浙江省杭州市西湖区文三路 100 号 3 幢 502" required maxlength="200" />
+      </div>
+      <div class="form-row">
+        <label for="remark">备注（可选）</label>
+        <input id="remark" name="remark" maxlength="200" />
+      </div>
+      <button class="btn" type="submit">提交订单</button>
+      <span class="muted" style="font-size:13px;">下单后 30 分钟内未支付将自动取消并释放库存</span>
+    </form>
+    {% else %}
+    <p class="empty">购物车是空的。<a href="/shop">去逛逛</a></p>
+    {% endif %}
+  </section>
+
+  <p><a class="btn btn-ghost" href="/shop">← 继续购物</a> <a class="btn btn-ghost" href="/orders">我的订单 →</a></p>
+{% endblock %}
