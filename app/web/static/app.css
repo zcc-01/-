@@ -101,6 +101,14 @@ table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 th { color: var(--muted); font-weight: 600; background: #fbfcfa; }
 
+/* 列宽固定 + 关键列不换行：避免「严重」「规则」「操作」被挤成竖排或按钮换行 */
+table.cols { table-layout: fixed; }
+table.cols th { white-space: nowrap; }
+table.cols td.mono, table.cols td.col-tight { white-space: nowrap; }
+table.cols .tag { white-space: nowrap; }
+table.cols .row-actions { flex-wrap: nowrap; white-space: nowrap; }
+table.cols td { overflow-wrap: break-word; word-break: break-word; }
+
 .tag {
   display: inline-block;
   padding: 1px 8px;
@@ -145,5 +153,4 @@ th { color: var(--muted); font-weight: 600; background: #fbfcfa; }
 
 .hint { color: var(--muted); font-size: 13px; }
 .empty { color: var(--muted); padding: 24px 0; text-align: center; }
-.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }
+.row-actions { display: flex; gap: 6px; flex-wrap: wrap; }.mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12px; }

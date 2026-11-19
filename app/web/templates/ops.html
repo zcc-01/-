@@ -80,7 +80,9 @@ async function loadQueue() {
       })
       .join("");
     box.innerHTML =
-      "<table><thead><tr><th>申请</th><th>品类</th><th>材料</th><th>承诺书</th><th>提交时间</th><th>操作</th></tr></thead><tbody>" +
+      "<table class='cols'><colgroup><col style='width:22%'><col style='width:11%'><col style='width:30%'>" +
+      "<col style='width:9%'><col style='width:15%'><col style='width:13%'></colgroup>" +
+      "<thead><tr><th>申请</th><th>品类</th><th>材料</th><th>承诺书</th><th>提交时间</th><th>操作</th></tr></thead><tbody>" +
       rows + "</tbody></table>";
   } catch (e) {
     box.innerHTML = "";
@@ -140,7 +142,9 @@ async function loadAlerts() {
       })
       .join("");
     box.innerHTML =
-      "<table><thead><tr><th>级别</th><th>规则</th><th>工单</th><th>状态</th><th>生成时间</th><th>处置结论</th><th>操作</th></tr></thead><tbody>" +
+      "<table class='cols'><colgroup><col style='width:6%'><col style='width:6%'><col style='width:29%'>" +
+      "<col style='width:7%'><col style='width:15%'><col style='width:24%'><col style='width:13%'></colgroup>" +
+      "<thead><tr><th>级别</th><th>规则</th><th>工单</th><th>状态</th><th>生成时间</th><th>处置结论</th><th>操作</th></tr></thead><tbody>" +
       rows + "</tbody></table>";
   } catch (e) {
     box.innerHTML = "";
