@@ -65,15 +65,37 @@ bash scripts/bootstrap.sh
 
 3. 打开 `http://127.0.0.1:8000`，接口文档在 `/docs`。
 
-### 方式二：本地
+### 方式二：本地 · Windows 双击即用（最简单）
+
+直接双击项目根目录的 **`run.bat`**。脚本会自动完成：定位 Python → 检查/安装依赖 → 首次建库灌种子 → 启动服务并打开扫码页。
+
+不需要自己开终端，也不需要配置环境变量。
+
+### 方式三：本地 · 命令行
 
 ```bash
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+# macOS / Linux
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
-python scripts/seed.py        # 建表 + 种子数据
+python scripts/seed.py        # 建表 + 种子数据（幂等，可重复执行）
 python -m uvicorn app.main:app --reload
 pytest -q                     # 44 个测试
 ```
+
+```bat
+REM Windows（PowerShell / cmd 均可用，先 cd 到项目根目录）
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt -r requirements-dev.txt
+python scripts\seed.py
+python -m uvicorn app.main:app --reload
+```
+
+> **Windows 提示**：如果 `python` 命令打开的是微软商店而不是运行程序，说明 PATH 里只有
+> `WindowsApps` 的别名占位符。此时请用 `run.bat`（它会自动寻找真实解释器），
+> 或用 Python 安装目录下的完整路径调用，例如
+> `"C:\Users\<你>\AppData\Local\Programs\Python\Python311\python.exe" -m uvicorn app.main:app --reload`。
+> 也可以输入 `py` 试试 py 启动器。
 
 ### 演示账号（口令统一 `Passw0rd!`）
 
