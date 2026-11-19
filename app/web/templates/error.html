@@ -1,20 +1,8 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>未查询到溯源信息</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-<header class="topbar">
-  <div class="wrap">
-    <span class="brand">田间码</span>
-    <span class="sub">农产品溯源与产地直供平台</span>
-  </div>
-</header>
+{% extends "base.html" %}
 
-<main class="wrap">
+{% block title %}未查询到溯源信息{% endblock %}
+
+{% block content %}
   <section class="card empty">
     <h1>未查询到该产品信息</h1>
     <p class="muted">{{ message }}</p>
@@ -22,10 +10,8 @@
     <p>请核对包装上的溯源码是否完整，或联系卖家确认。若刚完成赋码，二维码可能存在印刷延迟。</p>
     <a class="btn" href="/">返回首页</a>
   </section>
-</main>
+{% endblock %}
 
-<footer class="wrap footer">
+{% block footer %}
   <span>农产品溯源与产地直供电商平台</span>
-</footer>
-</body>
-</html>
+{% endblock %}

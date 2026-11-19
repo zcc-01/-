@@ -1,27 +1,17 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>{{ data.batch.crop_name }} · 溯源档案</title>
-  <link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-<header class="topbar">
-  <div class="wrap">
-    <span class="brand">田间码</span>
-    <span class="sub">农产品溯源与产地直供平台</span>
-  </div>
-</header>
+{% extends "base.html" %}
 
-<main class="wrap">
+{% block title %}{{ data.batch.crop_name }} · 溯源档案{% endblock %}
+
+{% block alert %}
   {% if not data.chain.ok %}
   <div class="alert-warn" role="alert">
     <strong>该产品溯源信息存在异常，已提交平台复核</strong>
     <span>{{ data.chain.message }}</span>
   </div>
   {% endif %}
+{% endblock %}
 
+{% block content %}
   <section class="card hero">
     <div class="hero-main">
       <h1>{{ data.batch.crop_name }}</h1>
@@ -94,11 +84,4 @@
       它与后续记录的链接就会失配，校验可以精确定位到第几条——这就是上面的「链校验」结论的来源。</p>
     <p class="muted">最近一次校验：{{ data.chain.checked_at }}</p>
   </section>
-</main>
-
-<footer class="wrap footer">
-  <span>{{ app_name }}</span>
-  <span>扫码信息仅供参考，检测报告以出具机构为准</span>
-</footer>
-</body>
-</html>
+{% endblock %}

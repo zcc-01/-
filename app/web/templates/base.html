@@ -1,0 +1,51 @@
+{#
+  统一页面骨架。
+
+  用法（子模板只需三行）：
+    extends "base.html"
+    block title   —— 页面标题
+    block content —— 页面主体
+
+  可覆盖的 block：
+    title       —— head 里的标题，默认 app_name
+    head_extra  —— 追加 head 内的标签（额外 CSS / meta）
+    subtitle    —— 顶部栏副标题
+    alert       —— 主体上方的告警条（如断链提示）
+    content     —— 页面主体，必填
+    footer      —— 页脚内容
+    scripts     —— 页面底部脚本
+
+  约定：样式统一走 /static/style.css，复用已有 class，
+        不要另起一套配色，避免三个域的页面风格分裂。
+#}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <span class="brand">田间码</span>
+    <span class="sub">{% block subtitle %}农产品溯源与产地直供平台{% endblock %}</span>
+  </div>
+</header>
+
+<main class="wrap">
+  {% block alert %}{% endblock %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="wrap footer">
+  {% block footer %}
+  <span>{{ app_name }}</span>
+  <span>扫码信息仅供参考，检测报告以出具机构为准</span>
+  {% endblock %}
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>
