@@ -1,0 +1,17 @@
+# 代码归属：PR 会自动指派评审人
+# 组长：公共基础 + 溯源链域
+/.github/                 @zcc-01
+/.devcontainer/           @zcc-01
+/app/core/                @zcc-01
+/app/db/                  @zcc-01
+/app/common/              @zcc-01
+/app/trace/               @zcc-01
+/app/main.py              @zcc-01
+/scripts/                 @zcc-01
+/sql/                     @zcc-01
+
+# 组员：交易域（李××）
+/app/trade/               @member2
+
+# 组员：用户与运营域（王××）
+/app/account/             @member3

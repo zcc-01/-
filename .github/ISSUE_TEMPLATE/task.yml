@@ -1,0 +1,41 @@
+name: 任务
+description: 按用例拆分的开发任务
+title: "[任务] "
+labels: ["task"]
+body:
+  - type: input
+    id: usecase
+    attributes:
+      label: 关联用例
+      placeholder: "UC-01 创建生产批次"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 任务目标
+      description: 完成后应达到的可验证状态
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 验收标准
+      placeholder: |
+        - [ ] 接口返回 200 且带统一响应结构
+        - [ ] 单测覆盖正常流与至少两条异常流
+    validations:
+      required: true
+  - type: input
+    id: branch
+    attributes:
+      label: 目标分支
+      placeholder: "feat/trace-chain"
+  - type: dropdown
+    id: owner
+    attributes:
+      label: 负责人
+      options:
+        - 张××（溯源链域 + 公共基础）
+        - 李××（交易域）
+        - 王××（用户与运营域）
