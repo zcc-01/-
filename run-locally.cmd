@@ -4,51 +4,44 @@ setlocal
 cd /d "%~dp0"
 
 echo ================================================
-echo  农产品溯源平台 - 用户与运营域  本地运行
+echo  Agri trace platform - local dev server
 echo ================================================
 echo.
 
-echo [1/3] 检查 Python 与依赖
+echo [1/3] Checking Python and dependencies...
 python -V
 python -c "import fastapi, sqlalchemy, jwt, bcrypt, jinja2, uvicorn" >nul 2>&1
-if errorlevel 1 (
-    echo     缺少依赖，开始安装（需要联网）...
-    python -m pip install -r requirements-dev.txt
-    if errorlevel 1 (
-        echo.
-        echo [失败] 依赖安装失败。手动执行：python -m pip install -r requirements-dev.txt
-        pause
-        exit /b 1
-    )
-) else (
-    echo     依赖已就绪
-)
-echo.
+if errorlevel 1 goto INSTALL
+echo      dependencies OK
+goto SEED
 
-echo [2/3] 初始化数据库与种子数据（幂等，重复执行不会重复写入）
+:INSTALL
+echo      missing packages, installing (needs network)...
+python -m pip install -r requirements-dev.txt
+if errorlevel 1 goto INSTALL_FAILED
+
+:SEED
+echo.
+echo [2/3] Creating database and seeding demo data...
 python -m app.db.seed_cli
-if errorlevel 1 (
-    echo [失败] 初始化失败
-    pause
-    exit /b 1
-)
-echo.
+if errorlevel 1 goto SEED_FAILED
 
-echo [3/3] 启动服务...
 echo.
-echo   首页    http://127.0.0.1:8000
-echo   运营台  http://127.0.0.1:8000/ops        ^<- 截图 5-7、5-8 在这两个页面
-echo   监管台  http://127.0.0.1:8000/regulator
-echo   农户端  http://127.0.0.1:8000/farmer
-echo   接口文档 http://127.0.0.1:8000/docs
+echo [3/3] Starting server...
 echo.
-echo   演示账号（口令均为 Passw0rd!）
-echo     operator01   平台运营
-echo     regulator01  监管人员
-echo     farmer01     农户
-echo     consumer01   消费者
+echo   Home        http://127.0.0.1:8000
+echo   Ops         http://127.0.0.1:8000/ops
+echo   Regulator   http://127.0.0.1:8000/regulator
+echo   Farmer      http://127.0.0.1:8000/farmer
+echo   API docs    http://127.0.0.1:8000/docs
 echo.
-echo   关闭服务：按 Ctrl+C，或直接关掉本窗口
+echo   Accounts, password is Passw0rd! for all:
+echo     operator01    platform ops / cert review / alerts
+echo     regulator01   regulator / traceback / CSV export
+echo     farmer01      farmer / apply cert / farm dashboard
+echo     consumer01    consumer / used for 403 demo
+echo.
+echo   Stop: Ctrl+C or close this window
 echo ================================================
 echo.
 
@@ -56,5 +49,19 @@ start "" cmd /c "timeout /t 4 >nul & start http://127.0.0.1:8000/login"
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 echo.
-echo 服务已停止。
+echo Server stopped.
 pause
+exit /b 0
+
+:INSTALL_FAILED
+echo.
+echo [FAILED] pip install failed.
+echo          run manually: python -m pip install -r requirements-dev.txt
+pause
+exit /b 1
+
+:SEED_FAILED
+echo.
+echo [FAILED] database seeding failed, see the error above.
+pause
+exit /b 1
