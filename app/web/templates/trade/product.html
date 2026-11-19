@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}商品详情 · {{ app_name }}{% endblock %}
+{% block subtitle %}产地直供 · 批次溯源{% endblock %}
+{% block body_attrs %} data-page="product" data-product-id="{{ product_id }}" data-free-freight="{{ free_freight_threshold }}" data-freight="{{ freight_flat }}"{% endblock %}
+{% block header %}{% include "trade/_nav.html" %}{% endblock %}
+{% block main_class %}wrap wide{% endblock %}
+
+{% block content %}
+  <section class="card" id="detail-card">
+    <p class="muted">加载中…</p>
+  </section>
+
+  <section class="card">
+    <h2>买家评价</h2>
+    <div id="reviews"><p class="muted">加载中…</p></div>
+  </section>
+{% endblock %}
+
+{% block footer %}
+  <span>高级软件工程课程项目 · 交易域（UC-07 商品详情 / UC-10 评价展示）</span>
+{% endblock %}
+
+{% block scripts %}<script src="/static/shop.js"></script>{% endblock %}

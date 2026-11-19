@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}订单中心 · {{ app_name }}{% endblock %}
+{% block subtitle %}产地直供 · 我的订单{% endblock %}
+{% block body_attrs %} data-page="orders" data-free-freight="{{ free_freight_threshold }}" data-freight="{{ freight_flat }}"{% endblock %}
+{% block header %}{% include "trade/_nav.html" %}{% endblock %}
+{% block main_class %}wrap wide{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>订单中心</h2>
+    <div class="tabs" id="scope-tabs">
+      <button class="on" data-scope="mine">我买到的</button>
+      <button data-scope="sales" id="tab-sales" hidden>我卖出的（农户）</button>
+    </div>
+    <div class="tabs" id="status-tabs">
+      <button class="on" data-status="">全部</button>
+      <button data-status="pending">待支付</button>
+      <button data-status="paid">已支付</button>
+      <button data-status="shipped">已发货</button>
+      <button data-status="received">已收货</button>
+      <button data-status="cancelled">已取消</button>
+    </div>
+    <div id="order-list"><p class="muted">加载中…</p></div>
+  </section>
+{% endblock %}
+
+{% block footer %}
+  <span>高级软件工程课程项目 · 交易域（UC-08 支付 / UC-09 发货收货 / UC-10 评价）</span>
+{% endblock %}
+
+{% block scripts %}<script src="/static/shop.js"></script>{% endblock %}

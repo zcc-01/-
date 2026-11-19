@@ -1,0 +1,30 @@
+<header class="topbar">
+  <div class="wrap wide">
+    <a class="brand" href="/" style="text-decoration:none">田间码</a>
+    <span class="sub">{{ app_name }}</span>
+    <nav class="nav">
+      <a href="/shop" class="{{ 'on' if active == 'shop' else '' }}">产地直供</a>
+      <a href="/cart" class="{{ 'on' if active == 'cart' else '' }}">购物车 <span class="badge-count" id="cart-badge">0</span></a>
+      <a href="/orders" class="{{ 'on' if active == 'orders' else '' }}">我的订单</a>
+      <a href="/">溯源首页</a>
+    </nav>
+    <div class="who">
+      <span class="muted" id="who-text">未登录</span>
+      <button class="btn sm" id="btn-login">登录</button>
+      <button class="btn sm ghost" id="btn-logout" hidden>退出</button>
+    </div>
+  </div>
+  <div class="wrap wide">
+    <form class="login-box" id="login-box">
+      <label class="field">账号
+        <input id="login-username" value="consumer01" autocomplete="username" />
+      </label>
+      <label class="field">口令
+        <input id="login-password" type="password" value="Passw0rd!" autocomplete="current-password" />
+      </label>
+      <button class="btn sm" type="submit">登录</button>
+      <span class="hint">演示账号：consumer01 消费者 / farmer01 农户，口令 Passw0rd!</span>
+    </form>
+  </div>
+</header>
+<div class="toast" id="toast"></div>

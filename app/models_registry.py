@@ -5,3 +5,4 @@
 
 from app.common.models import Farm, User  # noqa: F401
 from app.trace.models import Batch, ScanLog, TraceCode, TraceEvent  # noqa: F401
+from app.trade.models import Order, OrderItem, Payment, Product, Review  # noqa: F401

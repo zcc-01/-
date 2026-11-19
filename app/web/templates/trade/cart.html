@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}购物车 · {{ app_name }}{% endblock %}
+{% block subtitle %}产地直供 · 结算{% endblock %}
+{% block body_attrs %} data-page="cart" data-free-freight="{{ free_freight_threshold }}" data-freight="{{ freight_flat }}"{% endblock %}
+{% block header %}{% include "trade/_nav.html" %}{% endblock %}
+{% block main_class %}wrap wide{% endblock %}
+
+{% block content %}
+  <section class="card">
+    <h2>购物车</h2>
+    <p class="muted">购物车保存在本机浏览器；金额与库存以服务端试算为准，提交时按产地自动拆单。</p>
+    <div id="cart-body" style="margin-top:12px"></div>
+  </section>
+
+  <section class="card" id="checkout-card" hidden>
+    <h2>填写收货信息</h2>
+    <form class="toolbar" id="checkout-form">
+      <label class="field">收货人
+        <input id="a-receiver" placeholder="张三" maxlength="16" required />
+      </label>
+      <label class="field">手机号
+        <input id="a-phone" placeholder="13800000000" maxlength="11" required />
+      </label>
+      <label class="field grow">详细地址
+        <input id="a-detail" placeholder="浙江省杭州市临安区 xx 路 xx 号" maxlength="120" required />
+      </label>
+      <label class="field">备注
+        <input id="a-remark" placeholder="选填" maxlength="128" />
+      </label>
+      <button class="btn" type="submit" style="margin-top:0">提交订单</button>
+    </form>
+    <p class="hint" style="margin-top:8px">下单后请在 {{ pay_timeout_minutes }} 分钟内完成模拟支付，超时订单将自动取消并释放库存。</p>
+  </section>
+{% endblock %}
+
+{% block footer %}
+  <span>高级软件工程课程项目 · 交易域（UC-08 下单与支付）</span>
+{% endblock %}
+
+{% block scripts %}<script src="/static/shop.js"></script>{% endblock %}

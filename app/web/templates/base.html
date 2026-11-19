@@ -9,7 +9,10 @@
   可覆盖的 block：
     title       —— head 里的标题，默认 app_name
     head_extra  —— 追加 head 内的标签（额外 CSS / meta）
+    body_attrs  —— 追加 <body> 上的属性（如 data-page，供页面脚本识别）
+    header      —— 整个顶部栏，带导航/登录态的页面可整块替换
     subtitle    —— 顶部栏副标题
+    main_class  —— 主体容器的 class，默认 wrap；需要更宽版面时用 wrap wide
     alert       —— 主体上方的告警条（如断链提示）
     content     —— 页面主体，必填
     footer      —— 页脚内容
@@ -27,15 +30,17 @@
   <link rel="stylesheet" href="/static/style.css" />
   {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body{% block body_attrs %}{% endblock %}>
+{% block header %}
 <header class="topbar">
   <div class="wrap">
     <span class="brand">田间码</span>
     <span class="sub">{% block subtitle %}农产品溯源与产地直供平台{% endblock %}</span>
   </div>
 </header>
+{% endblock %}
 
-<main class="wrap">
+<main class="{% block main_class %}wrap{% endblock %}">
   {% block alert %}{% endblock %}
   {% block content %}{% endblock %}
 </main>

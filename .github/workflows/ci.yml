@@ -46,3 +46,7 @@ jobs:
           # 注意：不要 pipe 到 head，提前关闭管道会让 curl 以 23 退出导致步骤失败
           curl -sf http://127.0.0.1:8000/api/trace/PC-20251101-DEMO-ITM0001 -o /tmp/trace.json
           python -c "import json;d=json.load(open('/tmp/trace.json'));assert d['data']['chain']['ok'] and len(d['data']['events'])==5;print('scan ok, events:',len(d['data']['events']))"
+          # 交易域：检索 → 上架 → 试算 → 下单 → 支付幂等 → 发货 → 收货 → 评价（脚本内含断言）
+          bash scripts/smoke_trade.sh http://127.0.0.1:8000
+          curl -sf http://127.0.0.1:8000/api/products -o /tmp/products.json
+          python -c "import json;d=json.load(open('/tmp/products.json'));assert d['code']==0 and d['data']['total']>=5;print('products ok:',d['data']['total'])"

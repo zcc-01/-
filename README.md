@@ -22,10 +22,10 @@
 | 业务域 | 负责人 | 用例 | 状态 |
 |---|---|---|---|
 | 溯源链域 + 平台公共基础 | 张××（组长） | UC-01～UC-05 | ✅ 已完成，含 44 个自动化测试 |
-| 交易域 | 李×× | UC-06～UC-10 | 🟡 进行中（`feat/trade`） |
+| 交易域 | 李×× | UC-06～UC-10 | ✅ 已完成，含 24 个自动化测试 |
 | 用户与运营域 | 王×× | UC-11～UC-15 | 🟡 进行中（`feat/identity-ops`） |
 
-本仓库当前可直接运行的部分：**溯源链域全链路 + 登录鉴权 + 统一响应/异常 + 扫码页面 + CI/Codespaces**。
+本仓库当前可直接运行的部分：**溯源链域全链路 + 交易域全链路（检索→加购→下单→支付→发货→收货→评价） + 登录鉴权 + 统一响应/异常 + 扫码页面与商城页面 + CI/Codespaces**。
 
 ## 核心特性
 
@@ -35,7 +35,10 @@
 | 断链定位 | 校验返回 `broken_at`、`reason`（内容篡改／前序失配／序号缺失／尾部截断），不抛异常 |
 | 并发安全 | 序号由 `batch.event_count` 原子自增分配，`(batch_id, seq_no)` 唯一索引兜底，冲突自动重试 |
 | 双粒度赋码 | 批次码 + 单品码，码值由「批次号+类型+四位序号」派生，重复提交天然幂等 |
-| 交易同源（预留） | 溯源码状态提供 `active/revoked`，交易域下单前回查 |
+| 库存不超卖 | 扣减走 `UPDATE product SET stock = stock - n WHERE stock >= n`，以受影响行数判成败，0 行即整单回滚 |
+| 支付幂等 | `payment.order_id` 唯一索引兜底，重复点击/并发支付只留一条成功流水 |
+| 金额不可篡改 | 下单只收 `product_id + quantity`，金额与运费由服务端按库中价重算 |
+| 交易溯源同源 | 商品绑定 `batch_id`，详情页直出批次号与链上环节数；评价带 `batch_id` 支撑按批次看口碑 |
 | 扫码日志 | 匿名可扫码，日志写入失败降级不阻断查询（UC-04 异常流程 6a） |
 | 一键复现 | devcontainer + `scripts/bootstrap.sh`，克隆后一条命令启动 |
 
@@ -132,7 +135,30 @@ python -m uvicorn app.main:app --reload
 | GET | `/api/batches/{id}/scans` | 运营/监管 | 扫码日志 |
 | GET | `/api/health` | 公开 | 健康检查 |
 
-完整入参/出参与调用示例见 [`docs/接口文档.md`](docs/接口文档.md)。
+### 交易域（UC-06～UC-10）
+
+| 方法 | 路径 | 权限 | 说明 |
+|---|---|---|---|
+| POST | `/api/products` | 农户 | 商品上架（UC-06） |
+| GET | `/api/products` | 公开 | 检索筛选：关键词/价格/认证/有货/排序/分页（UC-07） |
+| GET | `/api/products/{id}` | 公开 | 商品详情 + 关联批次溯源摘要 |
+| PATCH | `/api/products/{id}` | 农户 | 改价、改库存、改描述 |
+| PATCH | `/api/products/{id}/status` | 农户 | 上架 / 下架 |
+| POST | `/api/cart/quote` | 公开 | 购物车试算（按产地分组、运费、缺货原因） |
+| POST | `/api/orders` | 消费者 | 下单（UC-08，拆单 + 条件扣库存 + 服务端重算金额） |
+| GET | `/api/orders` | 登录 | 订单列表（`scope=mine` 买到的 / `scope=sales` 卖出的） |
+| GET | `/api/orders/{id}` | 买卖双方/运营 | 订单详情 |
+| POST | `/api/orders/{id}/pay` | 消费者 | 模拟支付（幂等、失败上限 3 次） |
+| POST | `/api/orders/{id}/cancel` | 买家/运营 | 取消订单并释放库存 |
+| POST | `/api/orders/{id}/ship` | 农户 | 发货（UC-09） |
+| POST | `/api/orders/{id}/receive` | 消费者 | 确认收货（UC-09） |
+| POST | `/api/orders/{id}/reviews` | 消费者 | 评价晒单（UC-10） |
+| GET | `/api/products/{id}/reviews` | 公开 | 商品评价列表 |
+| POST | `/api/orders/admin/sweep-expired` | 运营 | 手动触发超时订单清理 |
+| GET | `/shop` `/shop/{id}` `/cart` `/orders` | 公开 | 商城页面 |
+
+完整入参/出参与调用示例见 [`docs/接口文档.md`](docs/接口文档.md)（溯源域）
+与 [`docs/接口文档-交易域.md`](docs/接口文档-交易域.md)（交易域）。
 
 ## 哈希链设计要点
 
@@ -151,6 +177,35 @@ python -m uvicorn app.main:app --reload
 - `location` 字段未参与摘要（与报告表 4-4 的公式一致），修改地点不会被检测到，属已知缺口，已在 `docs/数据库设计.md` 列为演进项；
 - SQLite 并发上限较低，生产切 MySQL 后压测数据见 `docs/测试说明.md`。
 
+## 交易域设计要点
+
+**为什么没有 `cart` 表**：报告 4.5 的 13 张表里没有购物车。购物车放在浏览器 `localStorage`，
+下单时只提交 `[{product_id, quantity}]`，由服务端重算金额并按产地拆单。这样表结构与报告一致，
+且「页面金额」与「服务端金额」永远同源；代价是购物车不跟随设备，属有意识的取舍。
+
+**库存扣减（并发关键）**：一律走条件更新，绝不做「先 SELECT 再比较再 UPDATE」：
+
+```sql
+UPDATE product SET stock = stock - :n
+ WHERE product_id = :pid AND status = 'on_shelf' AND stock >= :n;
+```
+
+受影响行数为 0 即判定「已下架或库存不足」，抛出 422 并回滚整个下单事务（含同单其他商品与订单写入）。
+`tests/test_trade.py::test_no_oversell_under_concurrency` 用 20 线程抢 5 件库存验证：
+售出数量与库存扣减严格一致，库存不会为负。
+
+**重复支付**：`payment.order_id` 建唯一索引，并发重复点击时第二条 INSERT 触发 `IntegrityError`，
+捕获后按幂等返回既有流水。应用层的 `if 已支付: return` 只是快路径，正确性由数据库保证。
+
+**事务边界**：下单（扣库存 + 写订单）在同一事务内；支付调用在**事务之外**执行，
+网关返回后再用短事务更新订单与流水，避免外部调用超时长时间占用连接。
+
+**超时取消**：惰性过期（支付/查询时判断）+ 后台任务每 60 秒兜底，取消时库存原路 `+=` 释放，
+不允许人工改库存数（BR-06）。
+
+**与溯源域的衔接**：`product.batch_id` → `batch.batch_id`，商品详情直出批次号、地块、采收日期与链上环节数；
+交易域只读溯源表，销售环节记录仍由溯源域的 `Stage.SALES` 负责。
+
 ## 目录结构
 
 ```
@@ -166,34 +221,42 @@ python -m uvicorn app.main:app --reload
 │   ├── db/                 # 引擎/会话、建表、种子数据
 │   ├── common/             # 跨域最小契约：User、Farm、Role
 │   ├── trace/              # 溯源链域：models/schemas/service/chain/router/二维码
+│   ├── trade/              # 交易域：models/schemas/gateway/service/router
 │   ├── account/            # 用户与运营域（登录部分，其余由王×× 扩展）
-│   ├── web/                # 扫码页模板与静态样式
+│   ├── web/                # 扫码页 + 商城页（shop/product/cart/orders）模板与静态资源
 │   └── main.py             # 应用入口、中间件、异常处理器、页面路由
 ├── docs/
-│   ├── use-cases/          # UC-01～UC-05 用例规格
+│   ├── use-cases/          # UC-01～UC-10 用例规格
 │   ├── 接口文档.md
+│   ├── 接口文档-交易域.md
+│   ├── 数据库设计-交易域.md
+│   ├── 交易域-设计与任务.md  # 交易域设计取舍、时序、风险、任务台账、报告素材映射
 │   ├── 数据库设计.md
 │   ├── 设计说明.md          # 类图/顺序图（PlantUML）
 │   ├── 分工与协作说明.md
 │   ├── issues-清单.md      # 可直接粘贴到 GitHub 的任务清单
 │   └── 测试说明.md
-├── sql/schema_mysql.sql    # 生产 DDL + 只追加权限示例
+├── sql/schema_mysql.sql    # 溯源域生产 DDL + 只追加权限示例
+├── sql/schema_trade.sql    # 交易域生产 DDL（5 张表 + 库存扣减标准语句）
 ├── scripts/                # bootstrap / seed / smoke
-└── tests/                  # 44 个用例：链路、并发、鉴权、赋码、扫码
+└── tests/                  # 68 个用例：链路、并发、鉴权、赋码、扫码、交易全链路
 ```
 
 ## 测试与质量
 
 ```bash
-ruff check .            # 静态检查
-pytest -q               # 44 passed
-bash scripts/smoke.sh   # 对已启动服务跑一遍端到端流程
+ruff check .                  # 静态检查
+pytest -q                     # 68 passed（溯源域 44 + 交易域 24）
+bash scripts/smoke.sh         # 溯源域端到端冒烟
+bash scripts/smoke_trade.sh   # 交易域端到端冒烟
 ```
 
 覆盖重点：
 
 - 链完整性：正常链、内容篡改、前序失配、中间记录删除、尾部截断；
 - 并发：6 线程 × 2 次追加，序号连续且链不断裂（`tests/test_concurrency.py`）；
+- 交易并发：20 线程抢 5 件库存，售出数量与库存扣减严格一致，无超卖（`tests/test_trade.py`）；
+- 交易规则：金额服务端重算、重复支付幂等、失败 3 次自动取消、未收货不可评价；
 - 业务规则：重复建档 409、越权 403、状态机禁止回退、赋码幂等与上限、作废码 410；
 - 页面：扫码页正常渲染、断链告警条、码不存在 404。
 
